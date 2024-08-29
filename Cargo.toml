@@ -1,0 +1,11 @@
+[package]
+name = "tui_todo_project"
+version = "0.1.0"
+authors = ["TheCarton <theukearchy@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crossterm = "0.28.1"
+ratatui = "0.28.1"
