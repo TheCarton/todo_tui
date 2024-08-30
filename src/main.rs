@@ -1,17 +1,20 @@
 mod app;
+mod ui;
 use crate::app::App;
 use std::io::{self, stdout, Error};
 
 use app::{Actions, CurrentScreen, CurrentlyEditing};
 use crossterm::event::KeyEventKind;
 use ratatui::{
-    backend::{Backend, CrosstermBackend}, crossterm::{
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
         event::{self, Event, KeyCode},
-        terminal::{
-            disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-        },
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
-    }, layout::{Constraint, Layout}, widgets::{Block, Paragraph}, Frame, Terminal
+    },
+    layout::{Constraint, Layout},
+    widgets::{Block, Paragraph},
+    Frame, Terminal,
 };
 
 fn main() -> io::Result<()> {
@@ -23,12 +26,10 @@ fn main() -> io::Result<()> {
 
     let res = run_app(&mut terminal, &mut app);
 
-
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
-    
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
     loop {
@@ -59,55 +60,50 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     }
                     _ => {}
                 },
-                CurrentScreen::Editing if key.kind == KeyEventKind::Press => {
-                    match key.code {
-                        KeyCode::Enter => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Title => {
-                                        app.currently_editing = Some(CurrentlyEditing::Description);
-                                    }
-                                    CurrentlyEditing::Description => {
-                                        app.save_task();
-                                        app.current_screen = CurrentScreen::Main;
-                                    }
+                CurrentScreen::Editing if key.kind == KeyEventKind::Press => match key.code {
+                    KeyCode::Enter => {
+                        if let Some(editing) = &app.currently_editing {
+                            match editing {
+                                CurrentlyEditing::Title => {
+                                    app.currently_editing = Some(CurrentlyEditing::Description);
+                                }
+                                CurrentlyEditing::Description => {
+                                    app.save_task();
+                                    app.current_screen = CurrentScreen::Main;
                                 }
                             }
                         }
-                        KeyCode::Backspace => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Key => {
-                                        app.key_input.pop();
-                                    }
-                                    CurrentlyEditing::Value => {
-                                        app.value_input.pop();
-                                    }
-                                }
-                            }
-                        }
-                        KeyCode::Esc => {
-                            app.current_screen = CurrentScreen::Main;
-                            app.currently_editing = None;
-                        }
-                        KeyCode::Tab => {
-                            app.toggle_editing();
-                        }
-                        KeyCode::Char(value) => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Key => {
-                                        app.key_input.push(value);
-                                    }
-                                    CurrentlyEditing::Value => {
-                                        app.value_input.push(value);
-                                    }
-                                }
-                            }
-                        }
-                        _ => {}
                     }
-                }
+                    KeyCode::Backspace => {
+                        if let Some(editing) = &app.currently_editing {
+                            match editing {
+                                CurrentlyEditing::Title => {
+                                    app.title_input.pop();
+                                }
+                                CurrentlyEditing::Description => {
+                                    app.description_input.pop();
+                                }
+                            }
+                        }
+                    }
+                    KeyCode::Esc => {
+                        app.current_screen = CurrentScreen::Main;
+                        app.currently_editing = None;
+                    }
+                    KeyCode::Char(value) => {
+                        if let Some(editing) = &app.currently_editing {
+                            match editing {
+                                CurrentlyEditing::Title => {
+                                    app.title_input.push(value);
+                                }
+                                CurrentlyEditing::Description => {
+                                    app.description_input.push(value);
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }
@@ -127,5 +123,8 @@ fn ui(frame: &mut Frame, app: &App) {
 
     frame.render_widget(Block::bordered().title("To-do TUI"), title_area);
     frame.render_widget(Block::bordered().title("my special task"), main_area);
-    frame.render_widget(Block::bordered().title("(A)ccet (R)eject (E)dit (D)elete (Q)uit"), status_area);
+    frame.render_widget(
+        Block::bordered().title("(A)ccet (R)eject (E)dit (D)elete (Q)uit"),
+        status_area,
+    );
 }
