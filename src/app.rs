@@ -21,9 +21,9 @@ pub enum TaskStatus {
 }
 
 pub struct Task {
-    title: String,
-    description: Option<String>,
-    task_status: TaskStatus,
+    pub(crate) title: String,
+    pub(crate) description: Option<String>,
+    pub(crate) task_status: TaskStatus,
 }
 
 pub struct App {
@@ -49,10 +49,16 @@ impl App {
         if self.title_input.is_empty() {
             return;
         }
-        let description = if self.description_input.is_empty() {None} else {Some(self.description_input.clone())};
-        let new_task = Task { title: self.title_input.clone(), description, task_status: TaskStatus::InProgress};
+        let description = if self.description_input.is_empty() {
+            None
+        } else {
+            Some(self.description_input.clone())
+        };
+        let new_task = Task {
+            title: self.title_input.clone(),
+            description,
+            task_status: TaskStatus::InProgress,
+        };
         self.tasks.push(new_task);
     }
-
-
 }
