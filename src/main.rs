@@ -4,7 +4,7 @@ use crate::app::App;
 use crate::ui::ui;
 use std::io::{self, stdout, Error};
 
-use app::{Actions, CurrentScreen, CurrentlyEditing};
+use app::{Actions, CurrentScreen, CurrentlyEditing, EditMode};
 use crossterm::event::KeyEventKind;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -43,12 +43,29 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             }
             match app.current_screen {
                 CurrentScreen::Main => match key.code {
-                    KeyCode::Char('e') => {
+                    KeyCode::Char('a') => {
+                        app.edit_mode = EditMode::CreateNew;
+                        app.title_input = String::new();
+                        app.description_input = String::new();
                         app.current_screen = CurrentScreen::Editing;
                         app.currently_editing = Some(CurrentlyEditing::Title);
                     }
+                    KeyCode::Char('e') => {
+                        app.current_screen = CurrentScreen::Editing;
+                        app.currently_editing = Some(CurrentlyEditing::Title);
+                        if let Some(task) = &app.current_task {
+                            app.edit_mode = EditMode::Active;
+                            app.title_input = task.title.clone();
+                            if let Some(description) = &task.description {
+                                app.description_input = description.clone();
+                            }
+                        }
+                    }
                     KeyCode::Char('q') => {
                         app.current_screen = CurrentScreen::Exiting;
+                    }
+                    KeyCode::Char('r') => {
+                        app.choose_shown_task();
                     }
                     _ => {}
                 },

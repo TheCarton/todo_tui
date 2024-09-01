@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentlyEditing, Task};
+use crate::app::{App, CurrentlyEditing, EditMode, Task};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
@@ -43,8 +43,12 @@ pub fn ui(frame: &mut Frame, app: &App) {
         }
         crate::app::CurrentScreen::Editing => {
             if let Some(editing) = &app.currently_editing {
+                let title_text = match &app.edit_mode {
+                    crate::app::EditMode::Active => "edit current task",
+                    crate::app::EditMode::CreateNew => "enter a new task",
+                };
                 let popup_block = Block::default()
-                    .title("Enter a new task")
+                    .title(title_text)
                     .borders(Borders::NONE)
                     .style(Style::default().bg(Color::DarkGray));
 
@@ -56,21 +60,25 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     .margin(1)
                     .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
                     .split(area);
-                let mut key_block = Block::default().title("Title").borders(Borders::ALL);
-                let mut value_block = Block::default().title("Description").borders(Borders::ALL);
+                let mut title_block = Block::default().title("Title").borders(Borders::ALL);
+                let mut description_block =
+                    Block::default().title("Description").borders(Borders::ALL);
 
                 let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
 
                 match editing {
-                    CurrentlyEditing::Title => key_block = key_block.style(active_style),
-                    CurrentlyEditing::Description => value_block = value_block.style(active_style),
+                    CurrentlyEditing::Title => title_block = title_block.style(active_style),
+                    CurrentlyEditing::Description => {
+                        description_block = description_block.style(active_style)
+                    }
                 };
 
-                let key_text = Paragraph::new(app.title_input.clone()).block(key_block);
-                frame.render_widget(key_text, popup_chunks[0]);
+                let task_text = Paragraph::new(app.title_input.clone()).block(title_block);
+                frame.render_widget(task_text, popup_chunks[0]);
 
-                let value_text = Paragraph::new(app.description_input.clone()).block(value_block);
-                frame.render_widget(value_text, popup_chunks[1]);
+                let description_text =
+                    Paragraph::new(app.description_input.clone()).block(description_block);
+                frame.render_widget(description_text, popup_chunks[1]);
             }
         }
         crate::app::CurrentScreen::Exiting => {

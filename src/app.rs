@@ -20,6 +20,12 @@ pub enum CurrentlyEditing {
 }
 
 #[derive(Clone, Copy)]
+pub enum EditMode {
+    Active,
+    CreateNew,
+}
+
+#[derive(Clone, Copy)]
 pub enum TaskStatus {
     InProgress,
     Finished,
@@ -38,6 +44,7 @@ pub struct App {
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub current_task: Option<Task>,
     pub currently_editing: Option<CurrentlyEditing>,
+    pub edit_mode: EditMode,
     pub tasks: Vec<Task>,
 }
 
@@ -49,29 +56,47 @@ impl App {
             current_screen: CurrentScreen::Main,
             current_task: None,
             currently_editing: None,
+            edit_mode: EditMode::CreateNew,
             tasks: Vec::new(),
         }
     }
 
     pub(crate) fn save_task(&mut self) {
-        if self.title_input.is_empty() {
+        if self.title_input.is_empty() && self.description_input.is_empty() {
             return;
         }
-        let description = if self.description_input.is_empty() {
-            None
-        } else {
-            Some(self.description_input.clone())
-        };
-        let new_task = Task {
-            title: self.title_input.clone(),
-            description,
-            task_status: TaskStatus::InProgress,
-        };
-        self.tasks.push(new_task);
+        match self.edit_mode {
+            EditMode::Active => {
+                let t = self
+                    .current_task
+                    .as_mut()
+                    .expect("editing an active task that exists");
+                t.title = self.title_input.clone();
+                let description = if self.description_input.is_empty() {
+                    None
+                } else {
+                    Some(self.description_input.clone())
+                };
+                t.description = description;
+            }
+            EditMode::CreateNew => {
+                let description = if self.description_input.is_empty() {
+                    None
+                } else {
+                    Some(self.description_input.clone())
+                };
+                let new_task = Task {
+                    title: self.title_input.clone(),
+                    description,
+                    task_status: TaskStatus::InProgress,
+                };
+                self.tasks.push(new_task);
+            }
+        }
         self.choose_shown_task();
     }
 
-    fn choose_shown_task(&mut self) {
+    pub fn choose_shown_task(&mut self) {
         if let Some(task) = &self.current_task {
             self.tasks.push(task.clone());
         }
