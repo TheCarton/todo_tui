@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 crossterm = "0.28.1"
+rand = "0.8.5"
 ratatui = "0.28.1"

@@ -1,8 +1,11 @@
+use rand::seq::SliceRandom;
+
 pub enum CurrentScreen {
     Main,
     Editing,
     Exiting,
 }
+#[derive(Clone, Copy)]
 pub enum Actions {
     Mark_Done,
     Mark_Reject,
@@ -10,16 +13,19 @@ pub enum Actions {
     Deleting,
     Exiting,
 }
+#[derive(Clone, Copy)]
 pub enum CurrentlyEditing {
     Title,
     Description,
 }
 
+#[derive(Clone, Copy)]
 pub enum TaskStatus {
     InProgress,
     Finished,
 }
 
+#[derive(Clone)]
 pub struct Task {
     pub(crate) title: String,
     pub(crate) description: Option<String>,
@@ -30,6 +36,7 @@ pub struct App {
     pub title_input: String,
     pub description_input: String,
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
+    pub current_task: Option<Task>,
     pub currently_editing: Option<CurrentlyEditing>,
     pub tasks: Vec<Task>,
 }
@@ -40,6 +47,7 @@ impl App {
             title_input: String::new(),
             description_input: String::new(),
             current_screen: CurrentScreen::Main,
+            current_task: None,
             currently_editing: None,
             tasks: Vec::new(),
         }
@@ -60,5 +68,14 @@ impl App {
             task_status: TaskStatus::InProgress,
         };
         self.tasks.push(new_task);
+        self.choose_shown_task();
+    }
+
+    fn choose_shown_task(&mut self) {
+        if let Some(task) = &self.current_task {
+            self.tasks.push(task.clone());
+        }
+        self.tasks.shuffle(&mut rand::thread_rng());
+        self.current_task = self.tasks.pop();
     }
 }

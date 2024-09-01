@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, Task};
+use crate::app::{App, CurrentlyEditing, Task};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
@@ -22,8 +22,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 ])
                 .split(frame.area());
 
-            let task = app.tasks.first();
-            let (middle_text, bottom_text) = if let Some(t) = task {
+            let (middle_text, bottom_text) = if let Some(t) = &app.current_task {
                 let bottom = if let Some(d) = &t.description {
                     d.clone()
                 } else {
@@ -42,11 +41,42 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 frame.render_widget(w, *a);
             }
         }
-        crate::app::CurrentScreen::Editing => todo!(),
+        crate::app::CurrentScreen::Editing => {
+            if let Some(editing) = &app.currently_editing {
+                let popup_block = Block::default()
+                    .title("Enter a new task")
+                    .borders(Borders::NONE)
+                    .style(Style::default().bg(Color::DarkGray));
+
+                let area = centered_rect(60, 25, frame.area());
+                frame.render_widget(popup_block, area);
+
+                let popup_chunks = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(1)
+                    .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+                    .split(area);
+                let mut key_block = Block::default().title("Title").borders(Borders::ALL);
+                let mut value_block = Block::default().title("Description").borders(Borders::ALL);
+
+                let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
+
+                match editing {
+                    CurrentlyEditing::Title => key_block = key_block.style(active_style),
+                    CurrentlyEditing::Description => value_block = value_block.style(active_style),
+                };
+
+                let key_text = Paragraph::new(app.title_input.clone()).block(key_block);
+                frame.render_widget(key_text, popup_chunks[0]);
+
+                let value_text = Paragraph::new(app.description_input.clone()).block(value_block);
+                frame.render_widget(value_text, popup_chunks[1]);
+            }
+        }
         crate::app::CurrentScreen::Exiting => {
             frame.render_widget(Clear, frame.area()); //this clears the entire screen and anything already drawn
             let popup_block = Block::default()
-                .title("Y/N")
+                .title("Quit")
                 .borders(Borders::NONE)
                 .style(Style::default().bg(Color::DarkGray));
 
