@@ -35,8 +35,20 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     (
                         t.title.clone(),
                         description,
-                        format!("added: {} {}", t.time_added.time(), t.time_added.date()),
-                        format!("edited: {} {}", t.time_added.time(), t.time_edited.date()),
+                        format!(
+                            "added: {}:{}:{} {}",
+                            t.time_added.hour(),
+                            t.time_added.minute(),
+                            t.time_added.second(),
+                            t.time_added.date()
+                        ),
+                        format!(
+                            "edited: {}:{}:{} {}",
+                            t.time_edited.hour(),
+                            t.time_edited.minute(),
+                            t.time_edited.second(),
+                            t.time_edited.date()
+                        ),
                     )
                 } else {
                     (

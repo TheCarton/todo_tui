@@ -81,6 +81,7 @@ impl App {
                     Some(self.description_input.clone())
                 };
                 t.description = description;
+                t.time_edited = OffsetDateTime::now_local().unwrap();
             }
             EditMode::CreateNew => {
                 let description = if self.description_input.is_empty() {
