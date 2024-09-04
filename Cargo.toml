@@ -10,3 +10,4 @@ edition = "2018"
 crossterm = "0.28.1"
 rand = "0.8.5"
 ratatui = "0.28.1"
+time = {version = "0.3.36", features = ["macros", "local-offset"]}

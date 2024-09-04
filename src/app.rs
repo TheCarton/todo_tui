@@ -1,4 +1,5 @@
 use rand::seq::SliceRandom;
+use time::{OffsetDateTime, PrimitiveDateTime};
 
 pub enum CurrentScreen {
     Main,
@@ -36,6 +37,8 @@ pub struct Task {
     pub(crate) title: String,
     pub(crate) description: Option<String>,
     pub(crate) task_status: TaskStatus,
+    pub(crate) time_added: OffsetDateTime,
+    pub(crate) time_edited: OffsetDateTime,
 }
 
 pub struct App {
@@ -89,6 +92,8 @@ impl App {
                     title: self.title_input.clone(),
                     description,
                     task_status: TaskStatus::InProgress,
+                    time_added: OffsetDateTime::now_local().unwrap(),
+                    time_edited: OffsetDateTime::now_local().unwrap(),
                 };
                 self.tasks.push(new_task);
             }

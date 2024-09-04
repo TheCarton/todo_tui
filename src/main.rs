@@ -18,6 +18,11 @@ use ratatui::{
     Frame, Terminal,
 };
 
+// add boxes around the main sections
+// add date added to every task
+// add due dates to tasks
+// add ability to save tasks to disk obviously
+
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;

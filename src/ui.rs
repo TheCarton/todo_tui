@@ -19,25 +19,43 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     Constraint::Length(3),
                     Constraint::Min(1),
                     Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
                 ])
                 .split(frame.area());
 
-            let (middle_text, bottom_text) = if let Some(t) = &app.current_task {
-                let bottom = if let Some(d) = &t.description {
-                    d.clone()
+            let (title_text, description_text, date_added_text, date_edited_text) =
+                if let Some(t) = &app.current_task {
+                    let description = if let Some(d) = &t.description {
+                        d.clone()
+                    } else {
+                        "no description".to_string()
+                    };
+
+                    (
+                        t.title.clone(),
+                        description,
+                        format!("added: {} {}", t.time_added.time(), t.time_added.date()),
+                        format!("edited: {} {}", t.time_added.time(), t.time_edited.date()),
+                    )
                 } else {
-                    "no description".to_string()
+                    (
+                        "no tasks!".to_string(),
+                        "no tasks 2!".to_string(),
+                        "no tasks 3!".to_string(),
+                        "no tasks 4!".to_string(),
+                    )
                 };
+            let app_header = Paragraph::new("To-Do Tui");
+            let title = Paragraph::new(title_text);
+            let description = Paragraph::new(description_text);
+            let date_added = Paragraph::new(date_added_text);
+            let date_edited = Paragraph::new(date_edited_text);
 
-                (t.title.clone(), bottom)
-            } else {
-                ("no tasks!".to_string(), "no tasks 2!".to_string())
-            };
-            let title = Paragraph::new("To-Do Tui");
-            let middle = Paragraph::new(middle_text);
-            let bottom = Paragraph::new(bottom_text);
-
-            for (w, a) in zip([title, middle, bottom], chunks.iter()) {
+            for (w, a) in zip(
+                [app_header, title, description, date_added, date_edited],
+                chunks.iter(),
+            ) {
                 frame.render_widget(w, *a);
             }
         }
