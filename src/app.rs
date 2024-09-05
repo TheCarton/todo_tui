@@ -1,6 +1,8 @@
 use rand::seq::SliceRandom;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
+use crate::task::{Task, TaskStatus};
+
 pub enum CurrentScreen {
     Main,
     Editing,
@@ -24,21 +26,6 @@ pub enum CurrentlyEditing {
 pub enum EditMode {
     Active,
     CreateNew,
-}
-
-#[derive(Clone, Copy)]
-pub enum TaskStatus {
-    InProgress,
-    Finished,
-}
-
-#[derive(Clone)]
-pub struct Task {
-    pub(crate) title: String,
-    pub(crate) description: Option<String>,
-    pub(crate) task_status: TaskStatus,
-    pub(crate) time_added: OffsetDateTime,
-    pub(crate) time_edited: OffsetDateTime,
 }
 
 pub struct App {

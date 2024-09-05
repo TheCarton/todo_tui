@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentlyEditing, EditMode, Task};
+use crate::app::{App, CurrentlyEditing, EditMode};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
