@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::Text,
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
     Frame,
 };
 
@@ -13,62 +13,8 @@ use crate::app::{App, CurrentlyEditing, EditMode};
 pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
         crate::app::CurrentScreen::Main => {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Length(3),
-                    Constraint::Min(1),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                ])
-                .split(frame.area());
-
-            let (title_text, description_text, date_added_text, date_edited_text) =
-                if let Some(t) = &app.current_task {
-                    let description = if let Some(d) = &t.description {
-                        d.clone()
-                    } else {
-                        "no description".to_string()
-                    };
-
-                    (
-                        t.title.clone(),
-                        description,
-                        format!(
-                            "added: {}:{}:{} {}",
-                            t.time_added.hour(),
-                            t.time_added.minute(),
-                            t.time_added.second(),
-                            t.time_added.date()
-                        ),
-                        format!(
-                            "edited: {}:{}:{} {}",
-                            t.time_edited.hour(),
-                            t.time_edited.minute(),
-                            t.time_edited.second(),
-                            t.time_edited.date()
-                        ),
-                    )
-                } else {
-                    (
-                        "no tasks!".to_string(),
-                        "no tasks 2!".to_string(),
-                        "no tasks 3!".to_string(),
-                        "no tasks 4!".to_string(),
-                    )
-                };
-            let app_header = Paragraph::new("To-Do Tui");
-            let title = Paragraph::new(title_text);
-            let description = Paragraph::new(description_text);
-            let date_added = Paragraph::new(date_added_text);
-            let date_edited = Paragraph::new(date_edited_text);
-
-            for (w, a) in zip(
-                [app_header, title, description, date_added, date_edited],
-                chunks.iter(),
-            ) {
-                frame.render_widget(w, *a);
+            if let Some(active_task) = &app.current_task {
+                frame.render_widget(active_task.clone(), frame.area());
             }
         }
         crate::app::CurrentScreen::Editing => {
