@@ -8,14 +8,7 @@ pub enum CurrentScreen {
     Editing,
     Exiting,
 }
-#[derive(Clone, Copy)]
-pub enum Actions {
-    MarkDone,
-    MarkReject,
-    Editing,
-    Deleting,
-    Exiting,
-}
+
 #[derive(Clone, Copy)]
 pub enum CurrentlyEditing {
     Title,
