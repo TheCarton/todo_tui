@@ -1,4 +1,4 @@
-use std::iter::zip;
+use std::iter::{zip, Chain};
 
 use ratatui::{
     buffer::Buffer,
@@ -24,8 +24,6 @@ pub enum TaskStatus {
 
 impl Widget for Task {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let app_header = Paragraph::new("To-Do Tui");
-        let title = Paragraph::new(self.title.clone());
         let date_added = Paragraph::new(format!(
             "added: {}:{}:{} {}",
             self.time_added.hour(),
@@ -40,40 +38,30 @@ impl Widget for Task {
             self.time_edited.second(),
             self.time_edited.date()
         ));
-        if let Some(description) = self.description {
-            let description = Paragraph::new(description.clone());
-            let chunks = Layout::new(
-                Direction::Horizontal,
-                [
-                    Constraint::Length(3),
-                    Constraint::Min(1),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                ],
-            )
-            .split(area);
-
-            for (w, a) in zip(
-                [app_header, title, description, date_added, date_edited],
-                chunks.iter(),
-            ) {
-                w.render(area, buf);
+        let chunks = Layout::new(
+            Direction::Vertical,
+            [Constraint::Percentage(80), Constraint::Percentage(20)],
+        )
+        .split(area);
+        let time_chunks = Layout::new(
+            Direction::Horizontal,
+            [Constraint::Percentage(50), Constraint::Percentage(50)],
+        )
+        .split(chunks[1]);
+        for (date_widget, time_chunk) in zip([date_added, date_edited], time_chunks.iter()) {
+            date_widget.render(*time_chunk, buf);
+        }
+        let title = Paragraph::new(self.title.clone());
+        if let Some(desc_text) = self.description {
+            let task_chunks =
+                Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])
+                    .split(chunks[0]);
+            let description = Paragraph::new(desc_text.clone());
+            for (task_widget, task_chunk) in zip([title, description], task_chunks.iter()) {
+                task_widget.render(*task_chunk, buf);
             }
         } else {
-            let chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([
-                    Constraint::Length(3),
-                    Constraint::Min(1),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                ])
-                .split(area);
-
-            for (w, a) in zip([app_header, title, date_added, date_edited], chunks.iter()) {
-                w.render(area, buf);
-            }
+            title.render(chunks[0], buf);
         }
     }
 }
