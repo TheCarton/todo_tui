@@ -16,6 +16,7 @@ use ratatui::{
     },
     Terminal,
 };
+use task::TaskStatus;
 
 // add boxes around the main sections
 // add date added to every task
@@ -67,6 +68,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     }
                     KeyCode::Char('q') => {
                         app.current_screen = CurrentScreen::Exiting;
+                    }
+                    KeyCode::Char('d') => {
+                        app.change_task_status(TaskStatus::Finished);
+                    }
+                    KeyCode::Char('D') => {
+                        app.change_task_status(TaskStatus::InProgress);
                     }
                     KeyCode::Char('r') => {
                         app.choose_shown_task();
