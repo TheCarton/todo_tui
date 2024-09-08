@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Paragraph, Widget},
 };
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 
 #[derive(Clone)]
 pub struct Task {
@@ -14,6 +14,32 @@ pub struct Task {
     pub(crate) task_status: TaskStatus,
     pub(crate) time_added: OffsetDateTime,
     pub(crate) time_edited: OffsetDateTime,
+    pub(crate) due_time: OffsetDateTime,
+}
+
+impl Task {
+    pub(crate) fn default(title: String) -> Task {
+        let now = OffsetDateTime::now_local().unwrap();
+        Task {
+            title,
+            description: None,
+            task_status: TaskStatus::InProgress,
+            time_added: now,
+            time_edited: now,
+            due_time: now + Duration::DAY,
+        }
+    }
+    pub(crate) fn new(title: String, description: String) -> Task {
+        let now = OffsetDateTime::now_local().unwrap();
+        Task {
+            title,
+            description: Some(description),
+            task_status: TaskStatus::InProgress,
+            time_added: now,
+            time_edited: now,
+            due_time: now + Duration::DAY,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -38,8 +64,10 @@ impl Widget for Task {
             [Constraint::Percentage(80), Constraint::Percentage(20)],
         )
         .split(area);
+
         let task_completion =
             Paragraph::new(self.task_status.to_text()).block(Block::bordered().title("Status"));
+
         let date_added = Paragraph::new(format!(
             "{}:{}:{} {}",
             self.time_added.hour(),
@@ -48,6 +76,7 @@ impl Widget for Task {
             self.time_added.date()
         ))
         .block(Block::bordered().title("Added"));
+
         let date_edited = Paragraph::new(format!(
             "{}:{}:{} {}",
             self.time_edited.hour(),
@@ -56,17 +85,29 @@ impl Widget for Task {
             self.time_edited.date()
         ))
         .block(Block::bordered().title("Edited"));
+
+        let due_date = Paragraph::new(format!(
+            "{}:{}:{} {}",
+            self.due_time.hour(),
+            self.due_time.minute(),
+            self.due_time.second(),
+            self.due_time.date()
+        ))
+        .block(Block::bordered().title("Due"));
+
         let status_chunks = Layout::new(
             Direction::Horizontal,
             [
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
             ],
         )
         .split(chunks[1]);
+
         for (date_widget, status_chunk) in zip(
-            [task_completion, date_added, date_edited],
+            [task_completion, date_added, date_edited, due_date],
             status_chunks.iter(),
         ) {
             date_widget.render(*status_chunk, buf);

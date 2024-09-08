@@ -64,17 +64,10 @@ impl App {
                 t.time_edited = OffsetDateTime::now_local().unwrap();
             }
             EditMode::CreateNew => {
-                let description = if self.description_input.is_empty() {
-                    None
+                let new_task = if self.description_input.is_empty() {
+                    Task::default(self.title_input.clone())
                 } else {
-                    Some(self.description_input.clone())
-                };
-                let new_task = Task {
-                    title: self.title_input.clone(),
-                    description,
-                    task_status: TaskStatus::InProgress,
-                    time_added: OffsetDateTime::now_local().unwrap(),
-                    time_edited: OffsetDateTime::now_local().unwrap(),
+                    Task::new(self.title_input.clone(), self.description_input.clone())
                 };
                 self.tasks.push(new_task);
             }
