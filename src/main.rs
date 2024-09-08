@@ -3,9 +3,9 @@ mod task;
 mod ui;
 use crate::app::App;
 use crate::ui::ui;
-use std::io::{self, stdout, Error};
+use std::io::{self, stdout};
 
-use app::{Actions, CurrentScreen, CurrentlyEditing, EditMode};
+use app::{CurrentScreen, CurrentlyEditing, EditMode};
 use crossterm::event::KeyEventKind;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
@@ -14,9 +14,7 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    layout::{Constraint, Layout},
-    widgets::{Block, Paragraph},
-    Frame, Terminal,
+    Terminal,
 };
 
 // add boxes around the main sections
@@ -31,14 +29,14 @@ fn main() -> io::Result<()> {
 
     let mut app = App::new();
 
-    let res = run_app(&mut terminal, &mut app);
+    let _res = run_app(&mut terminal, &mut app);
 
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
 
@@ -77,10 +75,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 },
                 CurrentScreen::Exiting => match key.code {
                     KeyCode::Char('y') => {
-                        return Ok(true);
+                        return Ok(());
                     }
                     KeyCode::Char('n') | KeyCode::Char('q') => {
-                        return Ok(false);
+                        return Ok(());
                     }
                     _ => {}
                 },

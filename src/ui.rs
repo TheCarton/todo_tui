@@ -1,14 +1,12 @@
-use std::iter::zip;
-
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::Text,
-    widgets::{Block, Borders, Clear, Paragraph, Widget, Wrap},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
 };
 
-use crate::app::{App, CurrentlyEditing, EditMode};
+use crate::app::{App, CurrentlyEditing};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {

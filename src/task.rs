@@ -1,4 +1,4 @@
-use std::iter::{zip, Chain};
+use std::iter::zip;
 
 use ratatui::{
     buffer::Buffer,

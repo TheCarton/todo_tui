@@ -1,5 +1,5 @@
 use rand::seq::SliceRandom;
-use time::{OffsetDateTime, PrimitiveDateTime};
+use time::OffsetDateTime;
 
 use crate::task::{Task, TaskStatus};
 
@@ -10,8 +10,8 @@ pub enum CurrentScreen {
 }
 #[derive(Clone, Copy)]
 pub enum Actions {
-    Mark_Done,
-    Mark_Reject,
+    MarkDone,
+    MarkReject,
     Editing,
     Deleting,
     Exiting,
