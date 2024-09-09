@@ -5,9 +5,10 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     widgets::{Block, Paragraph, Widget},
 };
+use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Task {
     pub(crate) title: String,
     pub(crate) description: Option<String>,
@@ -42,7 +43,7 @@ impl Task {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum TaskStatus {
     InProgress,
     Finished,

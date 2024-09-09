@@ -1,26 +1,29 @@
 use rand::seq::SliceRandom;
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 use crate::task::{Task, TaskStatus};
 
+#[derive(Serialize, Deserialize)]
 pub enum CurrentScreen {
     Main,
     Editing,
     Exiting,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CurrentlyEditing {
     Title,
     Description,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum EditMode {
     Active,
     CreateNew,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct App {
     pub title_input: String,
     pub description_input: String,
