@@ -3,7 +3,10 @@ mod task;
 mod ui;
 use crate::app::App;
 use crate::ui::ui;
-use std::io::{self, stdout};
+use std::{
+    fs::File,
+    io::{self, stdout, Write},
+};
 
 use app::{CurrentScreen, CurrentlyEditing, EditMode};
 use crossterm::event::KeyEventKind;
@@ -32,8 +35,17 @@ fn main() -> io::Result<()> {
 
     let _res = run_app(&mut terminal, &mut app);
 
+    save_to_disk(&app)?;
+
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
+}
+
+fn save_to_disk(app: &App) -> std::io::Result<()> {
+    let mut f = File::create("task_data.json")?;
+    let json_string = serde_json::to_string(app)?;
+    f.write_all(json_string.as_bytes())?;
     Ok(())
 }
 
