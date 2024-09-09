@@ -5,7 +5,7 @@ use crate::app::App;
 use crate::ui::ui;
 use std::{
     fs::File,
-    io::{self, stdout, Write},
+    io::{self, stdout, Read, Write},
 };
 
 use app::{CurrentScreen, CurrentlyEditing, EditMode};
@@ -21,17 +21,16 @@ use ratatui::{
 };
 use task::TaskStatus;
 
-// add boxes around the main sections
-// add date added to every task
-// add due dates to tasks
-// add ability to save tasks to disk obviously
-
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
 
-    let mut app = App::new();
+    let mut app = if let Ok(app) = load_from_disk() {
+        app
+    } else {
+        App::new()
+    };
 
     let _res = run_app(&mut terminal, &mut app);
 
@@ -47,6 +46,14 @@ fn save_to_disk(app: &App) -> std::io::Result<()> {
     let json_string = serde_json::to_string(app)?;
     f.write_all(json_string.as_bytes())?;
     Ok(())
+}
+
+fn load_from_disk() -> std::io::Result<App> {
+    let mut file = File::open("task_data.json")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    let app: App = serde_json::from_str(&contents)?;
+    Ok(app)
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
@@ -79,7 +86,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
                     }
                     KeyCode::Char('q') => {
-                        app.current_screen = CurrentScreen::Exiting;
+                        return Ok(());
                     }
                     KeyCode::Char('d') => {
                         app.change_task_status(TaskStatus::Finished);
@@ -89,15 +96,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     }
                     KeyCode::Char('r') => {
                         app.choose_shown_task();
-                    }
-                    _ => {}
-                },
-                CurrentScreen::Exiting => match key.code {
-                    KeyCode::Char('y') => {
-                        return Ok(());
-                    }
-                    KeyCode::Char('n') | KeyCode::Char('q') => {
-                        return Ok(());
                     }
                     _ => {}
                 },

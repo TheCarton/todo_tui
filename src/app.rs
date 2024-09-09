@@ -8,7 +8,6 @@ use crate::task::{Task, TaskStatus};
 pub enum CurrentScreen {
     Main,
     Editing,
-    Exiting,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
