@@ -60,12 +60,14 @@ impl TaskStatus {
 
 impl Widget for Task {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let b = Block::bordered().title("Task");
         let chunks = Layout::new(
             Direction::Vertical,
             [Constraint::Percentage(80), Constraint::Percentage(20)],
         )
-        .split(area);
+        .split(b.inner(area));
 
+        b.render(area, buf);
         let task_completion =
             Paragraph::new(self.task_status.to_text()).block(Block::bordered().title("Status"));
 
@@ -113,7 +115,7 @@ impl Widget for Task {
         ) {
             date_widget.render(*status_chunk, buf);
         }
-        let title = Paragraph::new(self.title.clone()).block(Block::bordered().title("Task"));
+        let title = Paragraph::new(self.title.clone()).block(Block::bordered().title("Title"));
         if let Some(desc_text) = self.description {
             let task_chunks =
                 Layout::vertical([Constraint::Percentage(70), Constraint::Percentage(30)])

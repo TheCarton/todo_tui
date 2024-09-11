@@ -8,12 +8,15 @@ use ratatui::{
 use crate::app::{App, CurrentlyEditing};
 
 pub fn ui(frame: &mut Frame, app: &App) {
+    let app_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(frame.area());
+    let main_screen_chunk = app_chunks[0];
+    let edit_screen_chunk = app_chunks[1];
+    if let Some(active_task) = &app.current_task {
+        frame.render_widget(active_task.clone(), main_screen_chunk);
+    }
     match app.current_screen {
-        crate::app::CurrentScreen::Main => {
-            if let Some(active_task) = &app.current_task {
-                frame.render_widget(active_task.clone(), frame.area());
-            }
-        }
+        crate::app::CurrentScreen::Main => {}
         crate::app::CurrentScreen::Editing => {
             if let Some(editing) = &app.currently_editing {
                 let title_text = match &app.edit_mode {
@@ -25,14 +28,13 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     .borders(Borders::NONE)
                     .style(Style::default().bg(Color::DarkGray));
 
-                let area = centered_rect(60, 25, frame.area());
-                frame.render_widget(popup_block, area);
+                frame.render_widget(popup_block, edit_screen_chunk);
 
                 let popup_chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(1)
                     .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
-                    .split(area);
+                    .split(edit_screen_chunk);
                 let mut title_block = Block::default().title("Title").borders(Borders::ALL);
                 let mut description_block =
                     Block::default().title("Description").borders(Borders::ALL);
