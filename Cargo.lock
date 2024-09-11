@@ -367,6 +367,7 @@ dependencies = [
  "paste",
  "strum",
  "strum_macros",
+ "time",
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width",

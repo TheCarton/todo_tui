@@ -1,9 +1,13 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
-    widgets::{Block, Borders, Paragraph},
+    style::{Color, Style, Stylize},
+    widgets::{
+        calendar::{CalendarEventStore, Monthly},
+        Block, Borders, Padding, Paragraph,
+    },
     Frame,
 };
+use time::OffsetDateTime;
 
 use crate::app::{App, CurrentlyEditing};
 
@@ -23,17 +27,21 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     crate::app::EditMode::Active => "edit current task",
                     crate::app::EditMode::CreateNew => "enter a new task",
                 };
-                let popup_block = Block::default()
+                let edit_block = Block::default()
                     .title(title_text)
                     .borders(Borders::NONE)
                     .style(Style::default().bg(Color::DarkGray));
 
-                frame.render_widget(popup_block, edit_screen_chunk);
+                frame.render_widget(edit_block, edit_screen_chunk);
 
-                let popup_chunks = Layout::default()
+                let edit_chunks = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(1)
-                    .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+                    .constraints([
+                        Constraint::Percentage(40),
+                        Constraint::Percentage(30),
+                        Constraint::Percentage(30),
+                    ])
                     .split(edit_screen_chunk);
                 let mut title_block = Block::default().title("Title").borders(Borders::ALL);
                 let mut description_block =
@@ -49,11 +57,19 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 };
 
                 let task_text = Paragraph::new(app.title_input.clone()).block(title_block);
-                frame.render_widget(task_text, popup_chunks[0]);
+                frame.render_widget(task_text, edit_chunks[0]);
 
                 let description_text =
                     Paragraph::new(app.description_input.clone()).block(description_block);
-                frame.render_widget(description_text, popup_chunks[1]);
+                frame.render_widget(description_text, edit_chunks[1]);
+
+                let date = OffsetDateTime::now_utc().date();
+                let calendar =
+                    Monthly::new(date, CalendarEventStore::today(Style::new().red().bold()))
+                        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+                        .show_month_header(Style::new().bold())
+                        .show_weekdays_header(Style::new().italic());
+                frame.render_widget(calendar, edit_chunks[2]);
             }
         }
     };
