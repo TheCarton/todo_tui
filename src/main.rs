@@ -129,6 +129,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         app.current_screen = CurrentScreen::Main;
                         app.currently_editing = None;
                     }
+                    KeyCode::Char('y') => {
+                        app.change_active_task_due_date(1);
+                    }
+                    KeyCode::Char('Y') => {
+                        app.change_active_task_due_date(5);
+                    }
                     KeyCode::Char(value) => {
                         if let Some(editing) = &app.currently_editing {
                             match editing {

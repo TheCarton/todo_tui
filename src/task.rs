@@ -41,6 +41,10 @@ impl Task {
             due_time: now + Duration::DAY,
         }
     }
+
+    pub(crate) fn change_due_date(&mut self, num_days: i64) {
+        self.due_time += Duration::days(num_days);
+    }
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]

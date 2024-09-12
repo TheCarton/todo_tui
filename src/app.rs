@@ -77,6 +77,12 @@ impl App {
         self.choose_shown_task();
     }
 
+    pub(crate) fn change_active_task_due_date(&mut self, num_days: i64) {
+        if let Some(ref mut active_task) = &mut self.current_task {
+            active_task.change_due_date(num_days);
+        }
+    }
+
     pub fn change_task_status(&mut self, new_status: TaskStatus) {
         if let Some(ref mut active_task) = &mut self.current_task {
             active_task.task_status = new_status;
