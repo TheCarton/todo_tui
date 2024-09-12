@@ -63,12 +63,17 @@ pub fn ui(frame: &mut Frame, app: &App) {
                     Paragraph::new(app.description_input.clone()).block(description_block);
                 frame.render_widget(description_text, edit_chunks[1]);
 
-                let date = OffsetDateTime::now_utc().date();
-                let calendar =
-                    Monthly::new(date, CalendarEventStore::today(Style::new().red().bold()))
-                        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
-                        .show_month_header(Style::new().bold())
-                        .show_weekdays_header(Style::new().italic());
+                let mut calendar_event_store = CalendarEventStore::today(Style::new().red().bold());
+                if let Some(active_task) = &app.current_task {
+                    calendar_event_store
+                        .add(active_task.due_time.date(), Style::new().blue().bold());
+                }
+
+                let todays_date = OffsetDateTime::now_utc().date();
+                let calendar = Monthly::new(todays_date, calendar_event_store)
+                    .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+                    .show_month_header(Style::new().bold())
+                    .show_weekdays_header(Style::new().italic());
                 frame.render_widget(calendar, edit_chunks[2]);
             }
         }
