@@ -9,7 +9,7 @@ use std::{
 };
 
 use app::{CurrentScreen, CurrentlyEditing, EditMode};
-use crossterm::event::KeyEventKind;
+use crossterm::event::{KeyEvent, KeyEventKind};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -56,6 +56,51 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
+enum ActionKind {
+    AddTask,
+    EditTask,
+    ShuffleTasks,
+    Quit,
+    MarkTaskDone,
+    MarkTaskInProgress,
+    KeysHint,
+}
+
+impl ActionKind {
+    const fn key_code(&self) -> KeyCode {
+        match self {
+            ActionKind::AddTask => KeyCode::Char('a'),
+            ActionKind::EditTask => KeyCode::Char('e'),
+            ActionKind::ShuffleTasks => KeyCode::Char('r'),
+            ActionKind::Quit => KeyCode::Char('q'),
+            ActionKind::MarkTaskDone => KeyCode::Char('d'),
+            ActionKind::MarkTaskInProgress => KeyCode::Char('D'),
+            ActionKind::KeysHint => KeyCode::Char('?'),
+        }
+    }
+}
+
+const ADD_TASK_KEY: KeyCode = ActionKind::AddTask.key_code();
+const EDIT_TASK_KEY: KeyCode = ActionKind::EditTask.key_code();
+const SHUFFLE_TASK_KEY: KeyCode = ActionKind::ShuffleTasks.key_code();
+const QUIT_KEY: KeyCode = ActionKind::Quit.key_code();
+const MARK_TASK_DONE_KEY: KeyCode = ActionKind::MarkTaskDone.key_code();
+const MARK_TASK_IN_PROGRESS_KEY: KeyCode = ActionKind::MarkTaskInProgress.key_code();
+const KEYS_HINT_KEY: KeyCode = ActionKind::KeysHint.key_code();
+
+fn main_screen_key_to_action(key: KeyEvent) -> Option<ActionKind> {
+    match key.code {
+        ADD_TASK_KEY => Some(ActionKind::AddTask),
+        EDIT_TASK_KEY => Some(ActionKind::EditTask),
+        SHUFFLE_TASK_KEY => Some(ActionKind::ShuffleTasks),
+        QUIT_KEY => Some(ActionKind::Quit),
+        MARK_TASK_DONE_KEY => Some(ActionKind::MarkTaskDone),
+        MARK_TASK_IN_PROGRESS_KEY => Some(ActionKind::MarkTaskInProgress),
+        KEYS_HINT_KEY => Some(ActionKind::KeysHint),
+        _ => None,
+    }
+}
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
@@ -66,15 +111,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 continue;
             }
             match app.current_screen {
-                CurrentScreen::Main => match key.code {
-                    KeyCode::Char('a') => {
+                CurrentScreen::Main => match main_screen_key_to_action(key) {
+                    Some(ActionKind::AddTask) => {
                         app.edit_mode = EditMode::CreateNew;
                         app.title_input = String::new();
                         app.description_input = String::new();
                         app.current_screen = CurrentScreen::Editing;
                         app.currently_editing = Some(CurrentlyEditing::Title);
                     }
-                    KeyCode::Char('e') => {
+                    Some(ActionKind::EditTask) => {
                         app.current_screen = CurrentScreen::Editing;
                         app.currently_editing = Some(CurrentlyEditing::Title);
                         if let Some(task) = &app.current_task {
@@ -85,16 +130,16 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             }
                         }
                     }
-                    KeyCode::Char('q') => {
+                    Some(ActionKind::Quit) => {
                         return Ok(());
                     }
-                    KeyCode::Char('d') => {
+                    Some(ActionKind::MarkTaskDone) => {
                         app.change_task_status(TaskStatus::Finished);
                     }
-                    KeyCode::Char('D') => {
+                    Some(ActionKind::MarkTaskInProgress) => {
                         app.change_task_status(TaskStatus::InProgress);
                     }
-                    KeyCode::Char('r') => {
+                    Some(ActionKind::ShuffleTasks) => {
                         app.choose_shown_task();
                     }
                     _ => {}
