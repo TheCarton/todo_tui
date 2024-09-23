@@ -9,7 +9,7 @@ use ratatui::{
 };
 use time::OffsetDateTime;
 
-use crate::app::{App, CurrentlyEditing};
+use crate::app::{App, EditMode, TaskEditMode};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     let app_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -24,8 +24,8 @@ pub fn ui(frame: &mut Frame, app: &App) {
         crate::app::CurrentScreen::Editing => {
             if let Some(editing) = &app.currently_editing {
                 let title_text = match &app.edit_mode {
-                    crate::app::EditMode::Active => "edit current task",
-                    crate::app::EditMode::CreateNew => "enter a new task",
+                    crate::app::TaskEditMode::Active => "edit current task",
+                    crate::app::TaskEditMode::CreateNew => "enter a new task",
                 };
                 let edit_block = Block::default()
                     .title(title_text)
@@ -50,10 +50,11 @@ pub fn ui(frame: &mut Frame, app: &App) {
                 let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
 
                 match editing {
-                    CurrentlyEditing::Title => title_block = title_block.style(active_style),
-                    CurrentlyEditing::Description => {
+                    EditMode::Title => title_block = title_block.style(active_style),
+                    EditMode::Description => {
                         description_block = description_block.style(active_style)
                     }
+                    EditMode::Main => {}
                 };
 
                 let task_text = Paragraph::new(app.title_input.clone()).block(title_block);
