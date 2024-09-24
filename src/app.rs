@@ -10,7 +10,7 @@ pub enum CurrentScreen {
     Editing,
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd, Ord, Eq)]
 pub enum EditMode {
     Main,
     Title,
@@ -18,7 +18,7 @@ pub enum EditMode {
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
-pub enum TaskEditMode {
+pub enum TaskCreationMode {
     Active,
     CreateNew,
 }
@@ -29,8 +29,8 @@ pub struct App {
     pub description_input: String,
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub current_task: Option<Task>,
-    pub currently_editing: Option<EditMode>,
-    pub edit_mode: TaskEditMode,
+    pub edit_mode: Option<EditMode>,
+    pub task_creation_mode: TaskCreationMode,
     pub tasks: Vec<Task>,
 }
 
@@ -41,8 +41,8 @@ impl App {
             description_input: String::new(),
             current_screen: CurrentScreen::Main,
             current_task: None,
-            currently_editing: None,
-            edit_mode: TaskEditMode::CreateNew,
+            edit_mode: None,
+            task_creation_mode: TaskCreationMode::CreateNew,
             tasks: Vec::new(),
         }
     }
@@ -51,8 +51,8 @@ impl App {
         if self.title_input.is_empty() && self.description_input.is_empty() {
             return;
         }
-        match self.edit_mode {
-            TaskEditMode::Active => {
+        match self.task_creation_mode {
+            TaskCreationMode::Active => {
                 let t = self
                     .current_task
                     .as_mut()
@@ -66,7 +66,7 @@ impl App {
                 t.description = description;
                 t.time_edited = OffsetDateTime::now_local().unwrap();
             }
-            TaskEditMode::CreateNew => {
+            TaskCreationMode::CreateNew => {
                 let new_task = if self.description_input.is_empty() {
                     Task::default(self.title_input.clone())
                 } else {

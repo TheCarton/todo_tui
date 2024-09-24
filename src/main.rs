@@ -8,7 +8,7 @@ use std::{
     io::{self, stdout, Read, Write},
 };
 
-use app::{CurrentScreen, EditMode, TaskEditMode};
+use app::{CurrentScreen, EditMode};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -55,6 +55,7 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum ActionKind {
     AddTask,
     EditMode,
@@ -68,28 +69,29 @@ enum ActionKind {
     ChangeMode,
     IncrementDueDate(i64),
     DecrementDueDate(i64),
+    AppendChar(char),
     DeleteChar,
 }
 
-impl ActionKind {
-    const fn key_code(&self) -> KeyCode {
-        match self {
-            ActionKind::AddTask => ADD_MODE_KEY,
-            ActionKind::EditMode => EDIT_MODE_KEY,
-            ActionKind::ShuffleTasks => SHUFFLE_TASK_KEY,
-            ActionKind::Quit => QUIT_KEY,
-            ActionKind::MarkTaskDone => MARK_TASK_DONE_KEY,
-            ActionKind::MarkTaskInProgress => MARK_TASK_IN_PROGRESS_KEY,
-            ActionKind::KeysHint => KEYS_HINT_KEY,
-            ActionKind::FocusTitle => FOCUS_TITLE_KEY,
-            ActionKind::FocusDescription => FOCUS_DESCRIPTION_KEY,
-            ActionKind::ChangeMode => CHANGE_MODE_KEY,
-            ActionKind::IncrementDueDate(_) => INCREMENT_DUE_DATE_BY_1,
-            ActionKind::DecrementDueDate(_) => DECREMENT_DUE_DATE_BY_1,
-            ActionKind::DeleteChar => DELETE_CHAR_KEY,
-        }
+const fn key_code(action_kind: ActionKind) -> Option<KeyCode> {
+    match action_kind {
+        ActionKind::AddTask => Some(ADD_MODE_KEY),
+        ActionKind::EditMode => Some(EDIT_MODE_KEY),
+        ActionKind::ShuffleTasks => Some(SHUFFLE_TASK_KEY),
+        ActionKind::Quit => Some(QUIT_KEY),
+        ActionKind::MarkTaskDone => Some(MARK_TASK_DONE_KEY),
+        ActionKind::MarkTaskInProgress => Some(MARK_TASK_IN_PROGRESS_KEY),
+        ActionKind::KeysHint => Some(KEYS_HINT_KEY),
+        ActionKind::FocusTitle => Some(FOCUS_TITLE_KEY),
+        ActionKind::FocusDescription => Some(FOCUS_DESCRIPTION_KEY),
+        ActionKind::ChangeMode => Some(CHANGE_MODE_KEY),
+        ActionKind::IncrementDueDate(_) => Some(INCREMENT_DUE_DATE_BY_1),
+        ActionKind::DecrementDueDate(_) => Some(DECREMENT_DUE_DATE_BY_1),
+        ActionKind::DeleteChar => Some(DELETE_CHAR_KEY),
+        ActionKind::AppendChar(_) => None,
     }
-
+}
+impl ActionKind {
     fn action_description(&self) -> String {
         String::from("need to make descriptions")
     }
@@ -150,17 +152,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             match app.current_screen {
                 CurrentScreen::Main => match main_screen_key_to_action(key.code) {
                     Some(ActionKind::AddTask) => {
-                        app.edit_mode = TaskEditMode::CreateNew;
+                        app.edit_mode = Some(EditMode::Title);
                         app.title_input = String::new();
                         app.description_input = String::new();
                         app.current_screen = CurrentScreen::Editing;
-                        app.currently_editing = Some(EditMode::Main);
+                        app.edit_mode = Some(EditMode::Main);
                     }
                     Some(ActionKind::EditMode) => {
                         app.current_screen = CurrentScreen::Editing;
-                        app.currently_editing = Some(EditMode::Main);
+                        app.edit_mode = Some(EditMode::Main);
                         if let Some(task) = &app.current_task {
-                            app.edit_mode = TaskEditMode::Active;
+                            app.edit_mode = Some(EditMode::Main);
                             app.title_input = task.title.clone();
                             if let Some(description) = &task.description {
                                 app.description_input = description.clone();
@@ -181,80 +183,70 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     }
                     _ => {}
                 },
-                CurrentScreen::Editing => match edit_mode_key_to_action(key.code) {
-                    Some(ActionKind::AddTask) => {
-                        app.save_task();
-                        app.current_screen = CurrentScreen::Main;
-                    }
-                    Some(ActionKind::FocusTitle) => {
-                        if let Some(editing) = &app.currently_editing {
-                            match editing {
-                                EditMode::Main => {
-                                    app.currently_editing = Some(EditMode::Title);
-                                }
-                                _ => {}
-                            }
+                CurrentScreen::Editing => {
+                    let maybe_action = edit_mode_key_to_action(key.code);
+                    match (app.edit_mode, maybe_action) {
+                        (Some(EditMode::Main), Some(action)) => {
+                            main_edit_mode_action_mapping(action, app);
                         }
-                    }
-                    Some(ActionKind::FocusDescription) => {
-                        if let Some(editing) = &app.currently_editing {
-                            match editing {
-                                EditMode::Main => {
-                                    app.currently_editing = Some(EditMode::Description);
-                                }
-                                _ => {}
-                            }
+                        (Some(_), Some(ActionKind::ChangeMode)) => {
+                            app.edit_mode = Some(EditMode::Main);
                         }
-                    }
-                    Some(ActionKind::DeleteChar) => {
-                        if let Some(editing) = &app.currently_editing {
-                            match editing {
-                                EditMode::Title => {
-                                    app.title_input.pop();
-                                }
-                                EditMode::Description => {
-                                    app.description_input.pop();
-                                }
-                                EditMode::Main => {}
-                            }
+                        (Some(EditMode::Title), Some(action)) => {
+                            type_to_string(action, &mut app.title_input);
                         }
-                    }
-                    Some(ActionKind::ChangeMode) => match app.current_screen {
-                        CurrentScreen::Main => {}
-                        CurrentScreen::Editing => {
-                            if let Some(focused_field) = app.currently_editing {
-                                match focused_field {
-                                    app::EditMode::Main => todo!(),
-                                    app::EditMode::Title => todo!(),
-                                    app::EditMode::Description => todo!(),
-                                }
-                            }
+                        (Some(EditMode::Description), Some(action)) => {
+                            type_to_string(action, &mut app.description_input);
                         }
-                    },
-                    Some(ActionKind::IncrementDueDate(i)) => {
-                        app.change_active_task_due_date(i);
+                        _ => {}
                     }
-                    Some(ActionKind::DecrementDueDate(i)) => {
-                        app.change_active_task_due_date(i);
-                    }
-                    None => {
-                        if let KeyCode::Char(value) = key.code {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    EditMode::Title => {
-                                        app.title_input.push(value);
-                                    }
-                                    EditMode::Description => {
-                                        app.description_input.push(value);
-                                    }
-                                    EditMode::Main => {}
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                },
+                }
             }
         }
+    }
+}
+
+fn type_to_string(action: ActionKind, field: &mut String) {
+    match action {
+        ActionKind::DeleteChar => {
+            field.pop();
+        }
+        ActionKind::AppendChar(c) => {
+            field.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
+    match action {
+        ActionKind::ChangeMode => {
+            app.current_screen = CurrentScreen::Main;
+        }
+        ActionKind::AddTask => {
+            app.save_task();
+            app.current_screen = CurrentScreen::Main;
+        }
+        ActionKind::FocusTitle => {
+            if let Some(editing) = &app.edit_mode {
+                if let EditMode::Main = editing {
+                    app.edit_mode = Some(EditMode::Title);
+                }
+            }
+        }
+        ActionKind::FocusDescription => {
+            if let Some(editing) = &app.edit_mode {
+                if let EditMode::Main = editing {
+                    app.edit_mode = Some(EditMode::Description);
+                }
+            }
+        }
+        ActionKind::IncrementDueDate(i) => {
+            app.change_active_task_due_date(i);
+        }
+        ActionKind::DecrementDueDate(i) => {
+            app.change_active_task_due_date(i);
+        }
+        _ => {}
     }
 }

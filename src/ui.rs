@@ -9,7 +9,7 @@ use ratatui::{
 };
 use time::OffsetDateTime;
 
-use crate::app::{App, EditMode, TaskEditMode};
+use crate::app::{App, EditMode, TaskCreationMode};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     let app_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -22,10 +22,10 @@ pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
         crate::app::CurrentScreen::Main => {}
         crate::app::CurrentScreen::Editing => {
-            if let Some(editing) = &app.currently_editing {
-                let title_text = match &app.edit_mode {
-                    crate::app::TaskEditMode::Active => "edit current task",
-                    crate::app::TaskEditMode::CreateNew => "enter a new task",
+            if let Some(editing) = &app.edit_mode {
+                let title_text = match &app.task_creation_mode {
+                    TaskCreationMode::Active => "edit current task",
+                    TaskCreationMode::CreateNew => "enter a new task",
                 };
                 let edit_block = Block::default()
                     .title(title_text)
