@@ -55,7 +55,7 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd)]
 enum ActionKind {
     AddTask,
     EditMode,
@@ -126,7 +126,7 @@ fn main_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
     }
 }
 
-fn edit_mode_key_to_action(key: KeyCode) -> Option<ActionKind> {
+fn edit_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
     match key {
         ADD_TASK_KEY => Some(ActionKind::AddTask),
         FOCUS_TITLE_KEY => Some(ActionKind::FocusTitle),
@@ -136,6 +136,7 @@ fn edit_mode_key_to_action(key: KeyCode) -> Option<ActionKind> {
         DECREMENT_DUE_DATE_BY_1 => Some(ActionKind::DecrementDueDate(-1)),
         DELETE_CHAR_KEY => Some(ActionKind::DeleteChar),
         KEYS_HINT_KEY => Some(ActionKind::KeysHint),
+        KeyCode::Char(c) => Some(ActionKind::AppendChar(c)),
         _ => None,
     }
 }
@@ -184,7 +185,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     _ => {}
                 },
                 CurrentScreen::Editing => {
-                    let maybe_action = edit_mode_key_to_action(key.code);
+                    let maybe_action = edit_screen_key_to_action(key.code);
                     match (app.edit_mode, maybe_action) {
                         (Some(EditMode::Main), Some(action)) => {
                             main_edit_mode_action_mapping(action, app);
@@ -228,18 +229,10 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
             app.current_screen = CurrentScreen::Main;
         }
         ActionKind::FocusTitle => {
-            if let Some(editing) = &app.edit_mode {
-                if let EditMode::Main = editing {
-                    app.edit_mode = Some(EditMode::Title);
-                }
-            }
+            app.edit_mode = Some(EditMode::Title);
         }
         ActionKind::FocusDescription => {
-            if let Some(editing) = &app.edit_mode {
-                if let EditMode::Main = editing {
-                    app.edit_mode = Some(EditMode::Description);
-                }
-            }
+            app.edit_mode = Some(EditMode::Description);
         }
         ActionKind::IncrementDueDate(i) => {
             app.change_active_task_due_date(i);
