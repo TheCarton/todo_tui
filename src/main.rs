@@ -5,7 +5,6 @@ mod ui;
 use crate::app::App;
 use crate::ui::ui;
 use std::{
-    fmt::Display,
     fs::File,
     io::{self, stdout, Read, Write},
 };
@@ -59,7 +58,7 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, EnumIter)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, VariantArray)]
 enum ActionKind {
     AddTask,
     EditMode,
@@ -71,15 +70,15 @@ enum ActionKind {
     FocusTitle,
     FocusDescription,
     ChangeMode,
-    IncrementDueDate(i64),
-    DecrementDueDate(i64),
-    AppendChar(char),
+    IncrementDueDate,
+    DecrementDueDate,
+    AppendChar,
     DeleteChar,
 }
 
-impl From<ActionKind> for Text<'_> {
-    fn from(value: ActionKind) -> Self {
-        let key_char = if let Some(c) = key_code(&value) {
+impl From<&ActionKind> for Text<'_> {
+    fn from(value: &ActionKind) -> Self {
+        let key_char = if let Some(c) = key_code(value) {
             c.to_string()
         } else {
             "n/a".to_string()
@@ -100,10 +99,10 @@ const fn key_code(action_kind: &ActionKind) -> Option<KeyCode> {
         ActionKind::FocusTitle => Some(FOCUS_TITLE_KEY),
         ActionKind::FocusDescription => Some(FOCUS_DESCRIPTION_KEY),
         ActionKind::ChangeMode => Some(CHANGE_MODE_KEY),
-        ActionKind::IncrementDueDate(_) => Some(INCREMENT_DUE_DATE_BY_1),
-        ActionKind::DecrementDueDate(_) => Some(DECREMENT_DUE_DATE_BY_1),
+        ActionKind::IncrementDueDate => Some(INCREMENT_DUE_DATE_BY_1),
+        ActionKind::DecrementDueDate => Some(DECREMENT_DUE_DATE_BY_1),
         ActionKind::DeleteChar => Some(DELETE_CHAR_KEY),
-        ActionKind::AppendChar(_) => None,
+        ActionKind::AppendChar => None,
     }
 }
 impl ActionKind {
@@ -177,11 +176,11 @@ fn edit_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
         FOCUS_TITLE_KEY => Some(ActionKind::FocusTitle),
         FOCUS_DESCRIPTION_KEY => Some(ActionKind::FocusDescription),
         CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
-        INCREMENT_DUE_DATE_BY_1 => Some(ActionKind::IncrementDueDate(1)),
-        DECREMENT_DUE_DATE_BY_1 => Some(ActionKind::DecrementDueDate(-1)),
+        INCREMENT_DUE_DATE_BY_1 => Some(ActionKind::IncrementDueDate),
+        DECREMENT_DUE_DATE_BY_1 => Some(ActionKind::DecrementDueDate),
         DELETE_CHAR_KEY => Some(ActionKind::DeleteChar),
         KEYS_HINT_KEY => Some(ActionKind::KeysHint),
-        KeyCode::Char(c) => Some(ActionKind::AppendChar(c)),
+        KeyCode::Char(_) => Some(ActionKind::AppendChar),
         _ => None,
     }
 }
@@ -256,10 +255,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             app.popup = Some(Popup::Help);
                         }
                         (Some(EditMode::Title), Some(action)) => {
-                            type_to_string(action, &mut app.title_input);
+                            type_to_string(action, &mut app.title_input, key.code);
+                            // yuck
                         }
                         (Some(EditMode::Description), Some(action)) => {
-                            type_to_string(action, &mut app.description_input);
+                            type_to_string(action, &mut app.description_input, key.code);
                         }
                         _ => {}
                     }
@@ -269,12 +269,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     }
 }
 
-fn type_to_string(action: ActionKind, field: &mut String) {
-    match action {
-        ActionKind::DeleteChar => {
+fn type_to_string(action: ActionKind, field: &mut String, key: KeyCode) {
+    match (action, key) {
+        (ActionKind::DeleteChar, _) => {
             field.pop();
         }
-        ActionKind::AppendChar(c) => {
+        (ActionKind::AppendChar, KeyCode::Char(c)) => {
             field.push(c);
         }
         _ => {}
@@ -296,11 +296,11 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
         ActionKind::FocusDescription => {
             app.edit_mode = Some(EditMode::Description);
         }
-        ActionKind::IncrementDueDate(i) => {
-            app.change_active_task_due_date(i);
+        ActionKind::IncrementDueDate => {
+            app.change_active_task_due_date(1);
         }
-        ActionKind::DecrementDueDate(i) => {
-            app.change_active_task_due_date(i);
+        ActionKind::DecrementDueDate => {
+            app.change_active_task_due_date(1);
         }
         ActionKind::KeysHint => {
             app.popup = Some(Popup::Help);
