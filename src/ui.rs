@@ -3,13 +3,16 @@ use ratatui::{
     style::{Color, Style, Stylize},
     widgets::{
         calendar::{CalendarEventStore, Monthly},
-        Block, Borders, Padding, Paragraph,
+        Block, Borders, Clear, Padding, Paragraph, Widget,
     },
     Frame,
 };
 use time::OffsetDateTime;
 
-use crate::app::{App, EditMode, TaskCreationMode};
+use crate::{
+    app::{App, EditMode, Popup, TaskCreationMode},
+    keys_hint::KeysHint,
+};
 
 pub fn ui(frame: &mut Frame, app: &App) {
     let app_chunks = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -79,6 +82,21 @@ pub fn ui(frame: &mut Frame, app: &App) {
             }
         }
     };
+
+    #[allow(clippy::single_match)]
+    match app.popup {
+        Some(Popup::Help) => {
+            let help = KeysHint {
+                screen: app.current_screen,
+            };
+
+            let center = centered_rect(70, 70, frame.area());
+            frame.render_widget(Clear, center);
+            frame.render_widget(help, center);
+        }
+
+        _ => {}
+    }
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

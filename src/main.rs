@@ -1,14 +1,16 @@
 mod app;
+mod keys_hint;
 mod task;
 mod ui;
 use crate::app::App;
 use crate::ui::ui;
 use std::{
+    fmt::Display,
     fs::File,
     io::{self, stdout, Read, Write},
 };
 
-use app::{CurrentScreen, EditMode};
+use app::{CurrentScreen, EditMode, Popup};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -16,8 +18,10 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
+    text::Text,
     Terminal,
 };
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, EnumString, VariantArray};
 use task::TaskStatus;
 
 fn main() -> io::Result<()> {
@@ -55,7 +59,7 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, EnumIter)]
 enum ActionKind {
     AddTask,
     EditMode,
@@ -73,7 +77,18 @@ enum ActionKind {
     DeleteChar,
 }
 
-const fn key_code(action_kind: ActionKind) -> Option<KeyCode> {
+impl From<ActionKind> for Text<'_> {
+    fn from(value: ActionKind) -> Self {
+        let key_char = if let Some(c) = key_code(&value) {
+            c.to_string()
+        } else {
+            "n/a".to_string()
+        };
+        Text::raw(format!("{} {}", key_char, value.action_description()))
+    }
+}
+
+const fn key_code(action_kind: &ActionKind) -> Option<KeyCode> {
     match action_kind {
         ActionKind::AddTask => Some(ADD_MODE_KEY),
         ActionKind::EditMode => Some(EDIT_MODE_KEY),
@@ -95,33 +110,63 @@ impl ActionKind {
     fn action_description(&self) -> String {
         String::from("need to make descriptions")
     }
+
+    fn ref_array(&self) -> [String; 2] {
+        if let Some(c) = key_code(self) {
+            [format!("{}", c), self.action_description()]
+        } else {
+            ["N/A".to_string(), "Not assigned.".to_string()]
+        }
+    }
 }
 
 const ADD_MODE_KEY: KeyCode = KeyCode::Char('a');
+const ADD_MODE_STRING: &str = "a";
 const EDIT_MODE_KEY: KeyCode = KeyCode::Char('e');
+const EDIT_MODE_STRING: &str = "e";
 const SHUFFLE_TASK_KEY: KeyCode = KeyCode::Char('r');
+const SHUFFLE_TASK_STRING: &str = "r";
 const QUIT_KEY: KeyCode = KeyCode::Char('q');
+const QUIT_STRING: &str = "q";
 const MARK_TASK_DONE_KEY: KeyCode = KeyCode::Char('d');
+const MARK_TASK_DONE_STRING: &str = "d";
 const MARK_TASK_IN_PROGRESS_KEY: KeyCode = KeyCode::Char('D');
+const MARK_TASK_IN_PROGRESS_STRING: &str = "D";
 const KEYS_HINT_KEY: KeyCode = KeyCode::Char('?');
-
+const KEYS_HINT_STRING: &str = "?";
 const ADD_TASK_KEY: KeyCode = KeyCode::Enter;
+const ADD_TASK_STRING: &str = "Enter";
 const FOCUS_TITLE_KEY: KeyCode = KeyCode::Char('a');
+const FOCUS_TITLE_STRING: &str = "a";
 const FOCUS_DESCRIPTION_KEY: KeyCode = KeyCode::Char('d');
+const FOCUS_DESCRIPTION_STRING: &str = "d";
 const CHANGE_MODE_KEY: KeyCode = KeyCode::Esc;
+const CHANGE_MODE_STRING: &str = "Esc";
 const INCREMENT_DUE_DATE_BY_1: KeyCode = KeyCode::Char('y');
+const INCREMENT_STRING: &str = "y";
 const DECREMENT_DUE_DATE_BY_1: KeyCode = KeyCode::Char('Y');
+const DECREMENT_STRING: &str = "Y";
 const DELETE_CHAR_KEY: KeyCode = KeyCode::Backspace;
+const DELETE_CHAR_STRING: &str = "Backspace";
 
 fn main_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
     match key {
         ADD_MODE_KEY => Some(ActionKind::AddTask),
+        CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
         EDIT_MODE_KEY => Some(ActionKind::EditMode),
         SHUFFLE_TASK_KEY => Some(ActionKind::ShuffleTasks),
         QUIT_KEY => Some(ActionKind::Quit),
         MARK_TASK_DONE_KEY => Some(ActionKind::MarkTaskDone),
         MARK_TASK_IN_PROGRESS_KEY => Some(ActionKind::MarkTaskInProgress),
         KEYS_HINT_KEY => Some(ActionKind::KeysHint),
+        _ => None,
+    }
+}
+
+fn popup_key_to_action(key: KeyCode) -> Option<ActionKind> {
+    match key {
+        CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
+        QUIT_KEY => Some(ActionKind::Quit),
         _ => None,
     }
 }
@@ -149,6 +194,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             if key.kind == event::KeyEventKind::Release {
                 // Skip events that are not KeyEventKind::Press
                 continue;
+            }
+            if app.popup.is_some() {
+                match popup_key_to_action(key.code) {
+                    Some(ActionKind::ChangeMode) => {
+                        app.popup = None;
+                    }
+                    Some(ActionKind::Quit) => {
+                        return Ok(());
+                    }
+                    _ => {}
+                }
             }
             match app.current_screen {
                 CurrentScreen::Main => match main_screen_key_to_action(key.code) {
@@ -182,6 +238,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     Some(ActionKind::ShuffleTasks) => {
                         app.choose_shown_task();
                     }
+                    Some(ActionKind::KeysHint) => {
+                        app.popup = Some(app::Popup::Help);
+                    }
                     _ => {}
                 },
                 CurrentScreen::Editing => {
@@ -192,6 +251,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
                         (Some(_), Some(ActionKind::ChangeMode)) => {
                             app.edit_mode = Some(EditMode::Main);
+                        }
+                        (Some(_), Some(ActionKind::KeysHint)) => {
+                            app.popup = Some(Popup::Help);
                         }
                         (Some(EditMode::Title), Some(action)) => {
                             type_to_string(action, &mut app.title_input);
@@ -239,6 +301,9 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
         }
         ActionKind::DecrementDueDate(i) => {
             app.change_active_task_due_date(i);
+        }
+        ActionKind::KeysHint => {
+            app.popup = Some(Popup::Help);
         }
         _ => {}
     }
