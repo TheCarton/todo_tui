@@ -19,8 +19,10 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
+    text::Text,
     Terminal,
 };
+use strum::{EnumDiscriminants, EnumIter, EnumMessage, EnumString, VariantArray};
 use task::TaskStatus;
 
 fn main() -> io::Result<()> {
@@ -67,6 +69,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 // Skip events that are not KeyEventKind::Press
                 continue;
             }
+            if app.popup.is_some() {
+                match popup_key_to_action(key.code) {
+                    Some(ActionKind::ChangeMode) => {
+                        app.popup = None;
+                    }
+                    Some(ActionKind::Quit) => {
+                        return Ok(());
+                    }
+                    _ => {}
+                }
+            }
             match app.current_screen {
                 CurrentScreen::Main => match keycode_to_action(key.code) {
                     Some(ActionKind::AddTask(_)) => {
@@ -99,6 +112,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     Some(ActionKind::ShuffleTasks(_)) => {
                         app.choose_shown_task();
                     }
+                    Some(ActionKind::KeysHint) => {
+                        app.popup = Some(app::Popup::Help);
+                    }
                     _ => {}
                 },
                 CurrentScreen::Editing => {
@@ -115,6 +131,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
                         (Some(EditMode::Description), _) => {
                             type_to_string(key.code, &mut app.description_input);
+                        (Some(_), Some(ActionKind::KeysHint)) => {
+                            app.popup = Some(Popup::Help);
+                        }
+                        (Some(EditMode::Title), Some(action)) => {
+                            type_to_string(action, &mut app.title_input, key.code);
+                            // yuck
+                        }
+                        (Some(EditMode::Description), Some(action)) => {
+                            type_to_string(action, &mut app.description_input, key.code);
                         }
                         _ => {}
                     }

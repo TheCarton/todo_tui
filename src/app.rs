@@ -4,7 +4,7 @@ use time::OffsetDateTime;
 
 use crate::task::{Task, TaskStatus};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CurrentScreen {
     Main,
     Editing,
@@ -23,6 +23,12 @@ pub enum TaskCreationMode {
     CreateNew,
 }
 
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub enum Popup {
+    Help,
+    Error,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct App {
     pub title_input: String,
@@ -30,6 +36,7 @@ pub struct App {
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub current_task: Option<Task>,
     pub edit_mode: Option<EditMode>,
+    pub popup: Option<Popup>,
     pub task_creation_mode: TaskCreationMode,
     pub tasks: Vec<Task>,
 }
@@ -42,6 +49,7 @@ impl App {
             current_screen: CurrentScreen::Main,
             current_task: None,
             edit_mode: None,
+            popup: None,
             task_creation_mode: TaskCreationMode::CreateNew,
             tasks: Vec::new(),
         }
