@@ -1,5 +1,6 @@
 mod app;
 mod input_keys;
+mod keys_hint;
 mod task;
 mod ui;
 use crate::app::App;
@@ -19,10 +20,8 @@ use ratatui::{
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
-    text::Text,
     Terminal,
 };
-use strum::{EnumDiscriminants, EnumIter, EnumMessage, EnumString, VariantArray};
 use task::TaskStatus;
 
 fn main() -> io::Result<()> {
@@ -70,11 +69,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 continue;
             }
             if app.popup.is_some() {
-                match popup_key_to_action(key.code) {
-                    Some(ActionKind::ChangeMode) => {
+                match keycode_to_action(key.code) {
+                    Some(ActionKind::ChangeMode(_)) => {
                         app.popup = None;
                     }
-                    Some(ActionKind::Quit) => {
+                    Some(ActionKind::Quit(_)) => {
                         return Ok(());
                     }
                     _ => {}
@@ -112,7 +111,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     Some(ActionKind::ShuffleTasks(_)) => {
                         app.choose_shown_task();
                     }
-                    Some(ActionKind::KeysHint) => {
+                    Some(ActionKind::KeysHint(_)) => {
                         app.popup = Some(app::Popup::Help);
                     }
                     _ => {}
