@@ -1,5 +1,5 @@
 mod app;
-mod keys_hint;
+mod input_keys;
 mod task;
 mod ui;
 use crate::app::App;
@@ -9,11 +9,13 @@ use std::{
     io::{self, stdout, Read, Write},
 };
 
-use app::{CurrentScreen, EditMode, Popup};
+use app::{CurrentScreen, EditMode};
+use crossterm::event::KeyCode;
+use input_keys::{keycode_to_action, ActionKind, DELETE_CHAR_KEYCODE};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
-        event::{self, Event, KeyCode},
+        event::{self, Event},
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
         ExecutableCommand,
     },
@@ -58,133 +60,6 @@ fn load_from_disk() -> std::io::Result<App> {
     Ok(app)
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, VariantArray)]
-enum ActionKind {
-    AddTask,
-    EditMode,
-    ShuffleTasks,
-    Quit,
-    MarkTaskDone,
-    MarkTaskInProgress,
-    KeysHint,
-    FocusTitle,
-    FocusDescription,
-    ChangeMode,
-    IncrementDueDate,
-    DecrementDueDate,
-    AppendChar,
-    DeleteChar,
-}
-
-impl From<&ActionKind> for Text<'_> {
-    fn from(value: &ActionKind) -> Self {
-        let key_char = if let Some(c) = key_code(value) {
-            c.to_string()
-        } else {
-            "n/a".to_string()
-        };
-        Text::raw(format!("{} {}", key_char, value.action_description()))
-    }
-}
-
-const fn key_code(action_kind: &ActionKind) -> Option<KeyCode> {
-    match action_kind {
-        ActionKind::AddTask => Some(ADD_MODE_KEY),
-        ActionKind::EditMode => Some(EDIT_MODE_KEY),
-        ActionKind::ShuffleTasks => Some(SHUFFLE_TASK_KEY),
-        ActionKind::Quit => Some(QUIT_KEY),
-        ActionKind::MarkTaskDone => Some(MARK_TASK_DONE_KEY),
-        ActionKind::MarkTaskInProgress => Some(MARK_TASK_IN_PROGRESS_KEY),
-        ActionKind::KeysHint => Some(KEYS_HINT_KEY),
-        ActionKind::FocusTitle => Some(FOCUS_TITLE_KEY),
-        ActionKind::FocusDescription => Some(FOCUS_DESCRIPTION_KEY),
-        ActionKind::ChangeMode => Some(CHANGE_MODE_KEY),
-        ActionKind::IncrementDueDate => Some(INCREMENT_DUE_DATE_BY_1),
-        ActionKind::DecrementDueDate => Some(DECREMENT_DUE_DATE_BY_1),
-        ActionKind::DeleteChar => Some(DELETE_CHAR_KEY),
-        ActionKind::AppendChar => None,
-    }
-}
-impl ActionKind {
-    fn action_description(&self) -> String {
-        String::from("need to make descriptions")
-    }
-
-    fn ref_array(&self) -> [String; 2] {
-        if let Some(c) = key_code(self) {
-            [format!("{}", c), self.action_description()]
-        } else {
-            ["N/A".to_string(), "Not assigned.".to_string()]
-        }
-    }
-}
-
-const ADD_MODE_KEY: KeyCode = KeyCode::Char('a');
-const ADD_MODE_STRING: &str = "a";
-const EDIT_MODE_KEY: KeyCode = KeyCode::Char('e');
-const EDIT_MODE_STRING: &str = "e";
-const SHUFFLE_TASK_KEY: KeyCode = KeyCode::Char('r');
-const SHUFFLE_TASK_STRING: &str = "r";
-const QUIT_KEY: KeyCode = KeyCode::Char('q');
-const QUIT_STRING: &str = "q";
-const MARK_TASK_DONE_KEY: KeyCode = KeyCode::Char('d');
-const MARK_TASK_DONE_STRING: &str = "d";
-const MARK_TASK_IN_PROGRESS_KEY: KeyCode = KeyCode::Char('D');
-const MARK_TASK_IN_PROGRESS_STRING: &str = "D";
-const KEYS_HINT_KEY: KeyCode = KeyCode::Char('?');
-const KEYS_HINT_STRING: &str = "?";
-const ADD_TASK_KEY: KeyCode = KeyCode::Enter;
-const ADD_TASK_STRING: &str = "Enter";
-const FOCUS_TITLE_KEY: KeyCode = KeyCode::Char('a');
-const FOCUS_TITLE_STRING: &str = "a";
-const FOCUS_DESCRIPTION_KEY: KeyCode = KeyCode::Char('d');
-const FOCUS_DESCRIPTION_STRING: &str = "d";
-const CHANGE_MODE_KEY: KeyCode = KeyCode::Esc;
-const CHANGE_MODE_STRING: &str = "Esc";
-const INCREMENT_DUE_DATE_BY_1: KeyCode = KeyCode::Char('y');
-const INCREMENT_STRING: &str = "y";
-const DECREMENT_DUE_DATE_BY_1: KeyCode = KeyCode::Char('Y');
-const DECREMENT_STRING: &str = "Y";
-const DELETE_CHAR_KEY: KeyCode = KeyCode::Backspace;
-const DELETE_CHAR_STRING: &str = "Backspace";
-
-fn main_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
-    match key {
-        ADD_MODE_KEY => Some(ActionKind::AddTask),
-        CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
-        EDIT_MODE_KEY => Some(ActionKind::EditMode),
-        SHUFFLE_TASK_KEY => Some(ActionKind::ShuffleTasks),
-        QUIT_KEY => Some(ActionKind::Quit),
-        MARK_TASK_DONE_KEY => Some(ActionKind::MarkTaskDone),
-        MARK_TASK_IN_PROGRESS_KEY => Some(ActionKind::MarkTaskInProgress),
-        KEYS_HINT_KEY => Some(ActionKind::KeysHint),
-        _ => None,
-    }
-}
-
-fn popup_key_to_action(key: KeyCode) -> Option<ActionKind> {
-    match key {
-        CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
-        QUIT_KEY => Some(ActionKind::Quit),
-        _ => None,
-    }
-}
-
-fn edit_screen_key_to_action(key: KeyCode) -> Option<ActionKind> {
-    match key {
-        ADD_TASK_KEY => Some(ActionKind::AddTask),
-        FOCUS_TITLE_KEY => Some(ActionKind::FocusTitle),
-        FOCUS_DESCRIPTION_KEY => Some(ActionKind::FocusDescription),
-        CHANGE_MODE_KEY => Some(ActionKind::ChangeMode),
-        INCREMENT_DUE_DATE_BY_1 => Some(ActionKind::IncrementDueDate),
-        DECREMENT_DUE_DATE_BY_1 => Some(ActionKind::DecrementDueDate),
-        DELETE_CHAR_KEY => Some(ActionKind::DeleteChar),
-        KEYS_HINT_KEY => Some(ActionKind::KeysHint),
-        KeyCode::Char(_) => Some(ActionKind::AppendChar),
-        _ => None,
-    }
-}
-
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
@@ -206,15 +81,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 }
             }
             match app.current_screen {
-                CurrentScreen::Main => match main_screen_key_to_action(key.code) {
-                    Some(ActionKind::AddTask) => {
+                CurrentScreen::Main => match keycode_to_action(key.code) {
+                    Some(ActionKind::AddTask(_)) => {
                         app.edit_mode = Some(EditMode::Title);
                         app.title_input = String::new();
                         app.description_input = String::new();
                         app.current_screen = CurrentScreen::Editing;
                         app.edit_mode = Some(EditMode::Main);
                     }
-                    Some(ActionKind::EditMode) => {
+                    Some(ActionKind::EditMode(_)) => {
                         app.current_screen = CurrentScreen::Editing;
                         app.edit_mode = Some(EditMode::Main);
                         if let Some(task) = &app.current_task {
@@ -225,16 +100,16 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             }
                         }
                     }
-                    Some(ActionKind::Quit) => {
+                    Some(ActionKind::Quit(_)) => {
                         return Ok(());
                     }
-                    Some(ActionKind::MarkTaskDone) => {
+                    Some(ActionKind::MarkTaskDone(_)) => {
                         app.change_task_status(TaskStatus::Finished);
                     }
-                    Some(ActionKind::MarkTaskInProgress) => {
+                    Some(ActionKind::MarkTaskInProgress(_)) => {
                         app.change_task_status(TaskStatus::InProgress);
                     }
-                    Some(ActionKind::ShuffleTasks) => {
+                    Some(ActionKind::ShuffleTasks(_)) => {
                         app.choose_shown_task();
                     }
                     Some(ActionKind::KeysHint) => {
@@ -243,23 +118,19 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     _ => {}
                 },
                 CurrentScreen::Editing => {
-                    let maybe_action = edit_screen_key_to_action(key.code);
+                    let maybe_action = keycode_to_action(key.code);
                     match (app.edit_mode, maybe_action) {
                         (Some(EditMode::Main), Some(action)) => {
                             main_edit_mode_action_mapping(action, app);
                         }
-                        (Some(_), Some(ActionKind::ChangeMode)) => {
+                        (Some(_), Some(ActionKind::ChangeMode(_))) => {
                             app.edit_mode = Some(EditMode::Main);
                         }
-                        (Some(_), Some(ActionKind::KeysHint)) => {
-                            app.popup = Some(Popup::Help);
+                        (Some(EditMode::Title), _) => {
+                            type_to_string(key.code, &mut app.title_input);
                         }
-                        (Some(EditMode::Title), Some(action)) => {
-                            type_to_string(action, &mut app.title_input, key.code);
-                            // yuck
-                        }
-                        (Some(EditMode::Description), Some(action)) => {
-                            type_to_string(action, &mut app.description_input, key.code);
+                        (Some(EditMode::Description), _) => {
+                            type_to_string(key.code, &mut app.description_input);
                         }
                         _ => {}
                     }
@@ -269,13 +140,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     }
 }
 
-fn type_to_string(action: ActionKind, field: &mut String, key: KeyCode) {
-    match (action, key) {
-        (ActionKind::DeleteChar, _) => {
+fn type_to_string(key: KeyCode, field: &mut String) {
+    match key {
+        DELETE_CHAR_KEYCODE => {
             field.pop();
         }
-        (ActionKind::AppendChar, KeyCode::Char(c)) => {
-            field.push(c);
+        KeyCode::Char(ch) => {
+            field.push(ch);
         }
         _ => {}
     }
@@ -283,27 +154,24 @@ fn type_to_string(action: ActionKind, field: &mut String, key: KeyCode) {
 
 fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
     match action {
-        ActionKind::ChangeMode => {
+        ActionKind::ChangeMode(_) => {
             app.current_screen = CurrentScreen::Main;
         }
-        ActionKind::AddTask => {
+        ActionKind::AddTask(_) => {
             app.save_task();
             app.current_screen = CurrentScreen::Main;
         }
-        ActionKind::FocusTitle => {
+        ActionKind::FocusTitle(_) => {
             app.edit_mode = Some(EditMode::Title);
         }
-        ActionKind::FocusDescription => {
+        ActionKind::FocusDescription(_) => {
             app.edit_mode = Some(EditMode::Description);
         }
-        ActionKind::IncrementDueDate => {
+        ActionKind::IncrementDueDate(_) => {
             app.change_active_task_due_date(1);
         }
-        ActionKind::DecrementDueDate => {
+        ActionKind::DecrementDueDate(_) => {
             app.change_active_task_due_date(1);
-        }
-        ActionKind::KeysHint => {
-            app.popup = Some(Popup::Help);
         }
         _ => {}
     }
