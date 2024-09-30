@@ -10,7 +10,7 @@ use std::{
     io::{self, stdout, Read, Write},
 };
 
-use app::{CurrentScreen, EditMode};
+use app::{CurrentScreen, EditMode, Popup};
 use crossterm::event::KeyCode;
 use input_keys::{keycode_to_action, ActionKind, DELETE_CHAR_KEYCODE};
 use ratatui::{
@@ -68,17 +68,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 // Skip events that are not KeyEventKind::Press
                 continue;
             }
-            if app.popup.is_some() {
-                match keycode_to_action(key.code) {
-                    Some(ActionKind::ChangeMode(_)) => {
-                        app.popup = None;
-                    }
-                    Some(ActionKind::Quit(_)) => {
-                        return Ok(());
-                    }
-                    _ => {}
-                }
-            }
             match app.current_screen {
                 CurrentScreen::Main => match keycode_to_action(key.code) {
                     Some(ActionKind::AddTask(_)) => {
@@ -114,6 +103,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     Some(ActionKind::KeysHint(_)) => {
                         app.popup = Some(app::Popup::Help);
                     }
+                    Some(ActionKind::ChangeMode(_)) => {
+                        app.popup = None;
+                    }
                     _ => {}
                 },
                 CurrentScreen::Editing => {
@@ -122,9 +114,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         (Some(EditMode::Main), Some(action)) => {
                             main_edit_mode_action_mapping(action, app);
                         }
-                        (Some(_), Some(ActionKind::ChangeMode(_))) => {
-                            app.edit_mode = Some(EditMode::Main);
-                        }
+                        (Some(_), Some(ActionKind::ChangeMode(_))) => match app.popup {
+                            Some(_) => app.popup = None,
+                            None => app.edit_mode = Some(EditMode::Main),
+                        },
                         (Some(EditMode::Title), _) => {
                             type_to_string(key.code, &mut app.title_input);
                         }
@@ -153,9 +146,14 @@ fn type_to_string(key: KeyCode, field: &mut String) {
 
 fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
     match action {
-        ActionKind::ChangeMode(_) => {
-            app.current_screen = CurrentScreen::Main;
-        }
+        ActionKind::ChangeMode(_) => match app.popup {
+            Some(_) => {
+                app.popup = None;
+            }
+            None => {
+                app.current_screen = CurrentScreen::Main;
+            }
+        },
         ActionKind::AddTask(_) => {
             app.save_task();
             app.current_screen = CurrentScreen::Main;
@@ -171,6 +169,9 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
         }
         ActionKind::DecrementDueDate(_) => {
             app.change_active_task_due_date(1);
+        }
+        ActionKind::KeysHint(_) => {
+            app.popup = Some(Popup::Help);
         }
         _ => {}
     }
