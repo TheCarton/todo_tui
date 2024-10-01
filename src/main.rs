@@ -12,7 +12,7 @@ use std::{
 
 use app::{CurrentScreen, EditMode, Popup};
 use crossterm::event::KeyCode;
-use input_keys::{keycode_to_action, ActionKind, DELETE_CHAR_KEYCODE};
+use input_keys::{keycode_to_actionkind, ActionKind, DELETE_CHAR_KEYCODE};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
@@ -69,7 +69,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 continue;
             }
             match app.current_screen {
-                CurrentScreen::Main => match keycode_to_action(key.code) {
+                CurrentScreen::Main => match keycode_to_actionkind(key.code) {
                     Some(ActionKind::AddTask(_)) => {
                         app.edit_mode = Some(EditMode::Title);
                         app.title_input = String::new();
@@ -109,7 +109,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     _ => {}
                 },
                 CurrentScreen::Editing => {
-                    let maybe_action = keycode_to_action(key.code);
+                    let maybe_action = keycode_to_actionkind(key.code);
                     match (app.edit_mode, maybe_action) {
                         (Some(EditMode::Main), Some(action)) => {
                             main_edit_mode_action_mapping(action, app);

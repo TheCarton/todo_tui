@@ -3,7 +3,7 @@ use ratatui::{
     style::{Color, Style, Stylize},
     widgets::{
         calendar::{CalendarEventStore, Monthly},
-        Block, Borders, Clear, Padding, Paragraph, Widget,
+        Block, Borders, Clear, Padding, Paragraph,
     },
     Frame,
 };

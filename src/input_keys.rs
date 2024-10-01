@@ -1,5 +1,71 @@
 use crossterm::event::KeyCode;
 
+macro_rules! const_action_kinds {
+    (
+        $(
+            ($keycode_name:ident, $const_name:ident) { $variant:ident, $key_code:expr, $name:expr, $description:expr }
+        ),*
+    ) => {
+        $(
+            // Define a constant for the KeyCode
+            pub(crate) const $keycode_name: KeyCode = $key_code;
+
+
+            // Define a constant for each ActionKind variant with InputKey
+            pub(crate) const $const_name: ActionKind = ActionKind::$variant(InputKey {
+                key_code: $key_code,
+                name: $name,
+                description: $description,
+            });
+        )*
+
+        // Define a constant array containing all ActionKind variants
+        pub(crate) const ACTION_KINDS: [ActionKind; count!($($const_name),*)] = [
+            $(
+                $const_name
+            ),*
+        ];
+
+      // Define a function that maps KeyCode to ActionKind
+        pub(crate) fn keycode_to_actionkind(keycode: KeyCode) -> Option<ActionKind> {
+            match keycode {
+                $(
+                    $keycode_name => Some($const_name),
+                )*
+                _ => None, // Default case when keycode does not match
+            }
+        }
+    }
+}
+
+// Macro to count the number of constants being defined
+macro_rules! count {
+    ($($element:expr),*) => {
+        <[()]>::len(&[$(count_expr!($element)),*])
+    };
+}
+
+macro_rules! count_expr {
+    ($element:expr) => {
+        ()
+    };
+}
+
+const_action_kinds! {
+    (ADD_TASK_KEYCODE, ADD_TASK) { AddTask, KeyCode::Char('a'), "Add Task", "Add a new task" },
+    (EDIT_MODE_KEYCODE, EDIT_MODE){ EditMode, KeyCode::Char('e'), "Edit Mode", "Enter edit mode" },
+    (CHOOSE_TASK_KEYCODE , CHOOSE_TASK ){ ShuffleTasks, KeyCode::Char('r'), "shuffle tasks", "choose a task"},
+    (QUIT_KEYCODE , QUIT ){ Quit, KeyCode::Char('q'), "quit", "quit app"},
+    (MARK_COMPLETE_KEYCODE , MARK_COMPLETE ){MarkTaskDone, KeyCode::Char('d'), "mark task done", "mark task as done."},
+    (MARK_INCOMPLETE, MARK_INCOMPLETE_KEYCODE ) { MarkTaskInProgress, KeyCode::Char('D'), "mark task not done", "blabla"},
+    (KEYS_HINT,  KEYS_HINT_KEYCODE ){ KeysHint, KeyCode::Char('?'), "keys help", "get help"},
+    (FOCUS_TITLE,  FOCUS_TITLE_KEYCODE ){ FocusTitle, KeyCode::Char('t'), "focus title field", "for typing idk"},
+    (FOCUS_DESCRIPTION,  FOCUS_DESCRIPTION_KEYCODE ){ FocusDescription, KeyCode::Char('T'), "focus description", "desc" },
+    (CHANGE_MODE,  CHANGE_MODE_KEYCODE ){ ChangeMode, KeyCode::Esc, "change modes", "escape" },
+    (INCREMENT_DATE,  INCREMENT_DATE_KEYCODE ){ IncrementDueDate, KeyCode::Char('y'), "increment date", "change due date"},
+    (DECREMENT_DATE,  DECREMENT_DATE_KEYCODE ){ DecrementDueDate, KeyCode::Char('Y'), "decrement date", "change due date"}
+}
+
 #[derive(Debug, PartialEq, Eq, PartialOrd)]
 pub(crate) enum ActionKind {
     AddTask(InputKey),
@@ -16,113 +82,11 @@ pub(crate) enum ActionKind {
     DecrementDueDate(InputKey),
 }
 
-pub fn keycode_to_action(key: KeyCode) -> Option<ActionKind> {
-    match key {
-        ADD_TASK_KEYCODE => Some(ADD_TASK_ACTION),
-        EDIT_MODE_KEYCODE => Some(EDIT_MODE_ACTION),
-        SHUFFLE_TASK_KEYCODE => Some(SHUFFLE_TASK_ACTION),
-        QUIT_KEYCODE => Some(QUIT_ACTION),
-        MARK_TASK_DONE_KEYCODE => Some(MARK_TASK_DONE_ACTION),
-        MARK_TASK_IN_PROGRESS_KEYCODE => Some(MARK_TASK_IN_PROGRESS_ACTION),
-        KEYS_HINT_KEYCODE => Some(KEYS_HINT_ACTION),
-        FOCUS_TITLE_KEYCODE => Some(FOCUS_TITLE_ACTION),
-        FOCUS_DESCRIPTION_KEYCODE => Some(FOCUS_DESCRIPTION_ACTION),
-        CHANGE_MODE_KEYCODE => Some(CHANGE_MODE_ACTION),
-        INCREMENT_DUE_DATE_BY_1_KEYCODE => Some(INCREMENT_DUE_DATE_BY_1_ACTION),
-        DECREMENT_DUE_DATE_BY_1_KEYCODE => Some(DECREMENT_DUE_DATE_BY_1_ACTION),
-        _ => None,
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, PartialOrd)]
 pub(crate) struct InputKey {
     pub(crate) key_code: KeyCode,
     pub(crate) name: &'static str,
     pub(crate) description: &'static str,
 }
-
-const ADD_TASK_KEYCODE: KeyCode = KeyCode::Char('a');
-const ADD_TASK_ACTION: ActionKind = ActionKind::AddTask(InputKey {
-    key_code: ADD_TASK_KEYCODE,
-    name: "a",
-    description: "add mode",
-});
-
-const EDIT_MODE_KEYCODE: KeyCode = KeyCode::Char('e');
-const EDIT_MODE_ACTION: ActionKind = ActionKind::EditMode(InputKey {
-    key_code: EDIT_MODE_KEYCODE,
-    name: "e",
-    description: "edit mode",
-});
-
-const SHUFFLE_TASK_KEYCODE: KeyCode = KeyCode::Char('r');
-const SHUFFLE_TASK_ACTION: ActionKind = ActionKind::ShuffleTasks(InputKey {
-    key_code: SHUFFLE_TASK_KEYCODE,
-    name: "r",
-    description: "shuffle tasks",
-});
-
-const QUIT_KEYCODE: KeyCode = KeyCode::Char('q');
-const QUIT_ACTION: ActionKind = ActionKind::Quit(InputKey {
-    key_code: QUIT_KEYCODE,
-    name: "q",
-    description: "quit",
-});
-
-const MARK_TASK_DONE_KEYCODE: KeyCode = KeyCode::Char('d');
-const MARK_TASK_DONE_ACTION: ActionKind = ActionKind::MarkTaskDone(InputKey {
-    key_code: MARK_TASK_DONE_KEYCODE,
-    name: "d",
-    description: "mark task done",
-});
-
-const MARK_TASK_IN_PROGRESS_KEYCODE: KeyCode = KeyCode::Char('D');
-const MARK_TASK_IN_PROGRESS_ACTION: ActionKind = ActionKind::MarkTaskInProgress(InputKey {
-    key_code: MARK_TASK_IN_PROGRESS_KEYCODE,
-    name: "D",
-    description: "mark task in progress",
-});
-
-const KEYS_HINT_KEYCODE: KeyCode = KeyCode::Char('?');
-const KEYS_HINT_ACTION: ActionKind = ActionKind::KeysHint(InputKey {
-    key_code: KEYS_HINT_KEYCODE,
-    name: "?",
-    description: "mark task in progress",
-});
-
-const FOCUS_TITLE_KEYCODE: KeyCode = KeyCode::Char('t');
-const FOCUS_TITLE_ACTION: ActionKind = ActionKind::FocusTitle(InputKey {
-    key_code: FOCUS_TITLE_KEYCODE,
-    name: "a",
-    description: "focus title input field",
-});
-
-const FOCUS_DESCRIPTION_KEYCODE: KeyCode = KeyCode::Char('T');
-const FOCUS_DESCRIPTION_ACTION: ActionKind = ActionKind::FocusDescription(InputKey {
-    key_code: FOCUS_DESCRIPTION_KEYCODE,
-    name: "d",
-    description: "focus title description field",
-});
-
-const CHANGE_MODE_KEYCODE: KeyCode = KeyCode::Esc;
-const CHANGE_MODE_ACTION: ActionKind = ActionKind::ChangeMode(InputKey {
-    key_code: CHANGE_MODE_KEYCODE,
-    name: "Escape",
-    description: "change modes",
-});
-
-const INCREMENT_DUE_DATE_BY_1_KEYCODE: KeyCode = KeyCode::Char('y');
-const INCREMENT_DUE_DATE_BY_1_ACTION: ActionKind = ActionKind::IncrementDueDate(InputKey {
-    key_code: INCREMENT_DUE_DATE_BY_1_KEYCODE,
-    name: "y",
-    description: "increment due date",
-});
-
-const DECREMENT_DUE_DATE_BY_1_KEYCODE: KeyCode = KeyCode::Char('Y');
-const DECREMENT_DUE_DATE_BY_1_ACTION: ActionKind = ActionKind::DecrementDueDate(InputKey {
-    key_code: DECREMENT_DUE_DATE_BY_1_KEYCODE,
-    name: "Y",
-    description: "decrement due date by 1",
-});
 
 pub const DELETE_CHAR_KEYCODE: KeyCode = KeyCode::Backspace;
