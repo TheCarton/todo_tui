@@ -87,10 +87,10 @@ pub fn ui(frame: &mut Frame, app: &App) {
     match app.popup {
         Some(Popup::Help) => {
             let help = KeysHint {
-                screen: app.current_screen,
+                _screen: app.current_screen,
             };
 
-            let center = centered_rect(70, 70, frame.area());
+            let center = centered_rect(50, 50, frame.area());
             frame.render_widget(Clear, center);
             frame.render_widget(help, center);
         }

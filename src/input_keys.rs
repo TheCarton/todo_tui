@@ -52,18 +52,18 @@ macro_rules! count_expr {
 }
 
 const_action_kinds! {
-    (ADD_TASK_KEYCODE, ADD_TASK) { AddTask, KeyCode::Char('a'), "Add Task", "Add a new task" },
-    (EDIT_MODE_KEYCODE, EDIT_MODE){ EditMode, KeyCode::Char('e'), "Edit Mode", "Enter edit mode" },
-    (CHOOSE_TASK_KEYCODE , CHOOSE_TASK ){ ShuffleTasks, KeyCode::Char('r'), "shuffle tasks", "choose a task"},
-    (QUIT_KEYCODE , QUIT ){ Quit, KeyCode::Char('q'), "quit", "quit app"},
-    (MARK_COMPLETE_KEYCODE , MARK_COMPLETE ){MarkTaskDone, KeyCode::Char('d'), "mark task done", "mark task as done."},
-    (MARK_INCOMPLETE, MARK_INCOMPLETE_KEYCODE ) { MarkTaskInProgress, KeyCode::Char('D'), "mark task not done", "blabla"},
-    (KEYS_HINT,  KEYS_HINT_KEYCODE ){ KeysHint, KeyCode::Char('?'), "keys help", "get help"},
-    (FOCUS_TITLE,  FOCUS_TITLE_KEYCODE ){ FocusTitle, KeyCode::Char('t'), "focus title field", "for typing idk"},
-    (FOCUS_DESCRIPTION,  FOCUS_DESCRIPTION_KEYCODE ){ FocusDescription, KeyCode::Char('T'), "focus description", "desc" },
-    (CHANGE_MODE,  CHANGE_MODE_KEYCODE ){ ChangeMode, KeyCode::Esc, "change modes", "escape" },
-    (INCREMENT_DATE,  INCREMENT_DATE_KEYCODE ){ IncrementDueDate, KeyCode::Char('y'), "increment date", "change due date"},
-    (DECREMENT_DATE,  DECREMENT_DATE_KEYCODE ){ DecrementDueDate, KeyCode::Char('Y'), "decrement date", "change due date"}
+    (ADD_TASK_KEYCODE, ADD_TASK) { AddTask, KeyCode::Char('a'), "a", "Add a new task" },
+    (EDIT_MODE_KEYCODE, EDIT_MODE){ EditMode, KeyCode::Char('e'), "e", "Enter edit mode for current task" },
+    (CHOOSE_TASK_KEYCODE , CHOOSE_TASK ){ ShuffleTasks, KeyCode::Char('r'), "r", "Choose a task to display"},
+    (QUIT_KEYCODE , QUIT ){ Quit, KeyCode::Char('q'), "q", "Quit"},
+    (MARK_COMPLETE_KEYCODE , MARK_COMPLETE ){MarkTaskDone, KeyCode::Char('d'), "d", "Mark task as done"},
+    (MARK_INCOMPLETE, MARK_INCOMPLETE_KEYCODE ) { MarkTaskInProgress, KeyCode::Char('D'), "D", "Mark task as in progress"},
+    (KEYS_HINT,  KEYS_HINT_KEYCODE ){ KeysHint, KeyCode::Char('?'), "?", "Display this help page"},
+    (FOCUS_TITLE,  FOCUS_TITLE_KEYCODE ){ FocusTitle, KeyCode::Char('t'), "t", "Focus the title field"},
+    (FOCUS_DESCRIPTION,  FOCUS_DESCRIPTION_KEYCODE ){ FocusDescription, KeyCode::Char('T'), "T", "Focus the description field" },
+    (CHANGE_MODE,  CHANGE_MODE_KEYCODE ){ ChangeMode, KeyCode::Esc, "Esc", "Change modes" },
+    (INCREMENT_DATE,  INCREMENT_DATE_KEYCODE ){ IncrementDueDate, KeyCode::Char('y'), "y", "Increase the due date by 1"},
+    (DECREMENT_DATE,  DECREMENT_DATE_KEYCODE ){ DecrementDueDate, KeyCode::Char('Y'), "Y", "Decrease the due date by 1"}
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd)]
@@ -80,6 +80,25 @@ pub(crate) enum ActionKind {
     ChangeMode(InputKey),
     IncrementDueDate(InputKey),
     DecrementDueDate(InputKey),
+}
+
+impl ActionKind {
+    pub(crate) const fn input_key(&self) -> &InputKey {
+        match &self {
+            ActionKind::AddTask(input_key) => input_key,
+            ActionKind::EditMode(input_key) => input_key,
+            ActionKind::ShuffleTasks(input_key) => input_key,
+            ActionKind::Quit(input_key) => input_key,
+            ActionKind::MarkTaskDone(input_key) => input_key,
+            ActionKind::MarkTaskInProgress(input_key) => input_key,
+            ActionKind::KeysHint(input_key) => input_key,
+            ActionKind::FocusTitle(input_key) => input_key,
+            ActionKind::FocusDescription(input_key) => input_key,
+            ActionKind::ChangeMode(input_key) => input_key,
+            ActionKind::IncrementDueDate(input_key) => input_key,
+            ActionKind::DecrementDueDate(input_key) => input_key,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd)]
