@@ -39,6 +39,7 @@ pub struct App {
     pub popup: Option<Popup>,
     pub task_creation_mode: TaskCreationMode,
     pub tasks: Vec<Task>,
+    pub done_tasks: Vec<Task>,
 }
 
 impl App {
@@ -52,6 +53,7 @@ impl App {
             popup: None,
             task_creation_mode: TaskCreationMode::CreateNew,
             tasks: Vec::new(),
+            done_tasks: Vec::new(),
         }
     }
 
@@ -95,6 +97,11 @@ impl App {
     pub fn change_task_status(&mut self, new_status: TaskStatus) {
         if let Some(ref mut active_task) = &mut self.current_task {
             active_task.task_status = new_status;
+            if active_task.task_status == TaskStatus::Finished {
+                self.done_tasks.push(active_task.to_owned());
+                self.current_task = None;
+                self.choose_shown_task();
+            }
         }
     }
     /*

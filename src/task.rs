@@ -47,7 +47,7 @@ impl Task {
     }
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Ord)]
 pub enum TaskStatus {
     InProgress,
     Finished,
