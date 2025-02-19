@@ -91,17 +91,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
             match app.current_screen {
                 CurrentScreen::Main => match keycode_to_actionkind(key.code) {
                     Some(ActionKind::AddTask(_)) => {
-                        app.edit_mode = Some(EditMode::Title);
+                        app.edit_mode = EditMode::Title;
                         app.title_input = String::new();
                         app.description_input = String::new();
                         app.current_screen = CurrentScreen::Editing;
-                        app.edit_mode = Some(EditMode::Main);
+                        app.edit_mode = EditMode::Main;
                     }
                     Some(ActionKind::EditMode(_)) => {
                         app.current_screen = CurrentScreen::Editing;
-                        app.edit_mode = Some(EditMode::Main);
+                        app.edit_mode = EditMode::Main;
                         if let Some(task) = &app.current_task {
-                            app.edit_mode = Some(EditMode::Main);
+                            app.edit_mode = EditMode::Main;
                             app.title_input = task.title.clone();
                             if let Some(description) = &task.description {
                                 app.description_input = description.clone();
@@ -131,17 +131,17 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 CurrentScreen::Editing => {
                     let maybe_action = keycode_to_actionkind(key.code);
                     match (app.edit_mode, maybe_action) {
-                        (Some(EditMode::Main), Some(action)) => {
+                        (EditMode::Main, Some(action)) => {
                             main_edit_mode_action_mapping(action, app);
                         }
-                        (Some(_), Some(ActionKind::ChangeMode(_))) => match app.popup {
+                        (_, Some(ActionKind::ChangeMode(_))) => match app.popup {
                             Some(_) => app.popup = None,
-                            None => app.edit_mode = Some(EditMode::Main),
+                            None => app.edit_mode = EditMode::Main,
                         },
-                        (Some(EditMode::Title), _) => {
+                        (EditMode::Title, _) => {
                             type_to_string(key.code, &mut app.title_input);
                         }
-                        (Some(EditMode::Description), _) => {
+                        (EditMode::Description, _) => {
                             type_to_string(key.code, &mut app.description_input);
                         }
                         _ => {}
@@ -179,10 +179,10 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
             app.current_screen = CurrentScreen::Main;
         }
         ActionKind::FocusTitle(_) => {
-            app.edit_mode = Some(EditMode::Title);
+            app.edit_mode = EditMode::Title;
         }
         ActionKind::FocusDescription(_) => {
-            app.edit_mode = Some(EditMode::Description);
+            app.edit_mode = EditMode::Description;
         }
         ActionKind::IncrementDueDate(_) => {
             app.change_active_task_due_date(1);

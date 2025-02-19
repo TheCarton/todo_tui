@@ -25,61 +25,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
     match app.current_screen {
         crate::app::CurrentScreen::Main => {}
         crate::app::CurrentScreen::Editing => {
-            if let Some(editing) = &app.edit_mode {
-                let title_text = match &app.task_creation_mode {
-                    TaskCreationMode::Active => "edit current task",
-                    TaskCreationMode::CreateNew => "enter a new task",
-                };
-                let edit_block = Block::default()
-                    .title(title_text)
-                    .borders(Borders::NONE)
-                    .style(Style::default().bg(Color::DarkGray));
-
-                frame.render_widget(edit_block, edit_screen_chunk);
-
-                let edit_chunks = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(1)
-                    .constraints([
-                        Constraint::Percentage(40),
-                        Constraint::Percentage(30),
-                        Constraint::Percentage(30),
-                    ])
-                    .split(edit_screen_chunk);
-                let mut title_block = Block::default().title("Title").borders(Borders::ALL);
-                let mut description_block =
-                    Block::default().title("Description").borders(Borders::ALL);
-
-                let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
-
-                match editing {
-                    EditMode::Title => title_block = title_block.style(active_style),
-                    EditMode::Description => {
-                        description_block = description_block.style(active_style)
-                    }
-                    EditMode::Main => {}
-                };
-
-                let task_text = Paragraph::new(app.title_input.clone()).block(title_block);
-                frame.render_widget(task_text, edit_chunks[0]);
-
-                let description_text =
-                    Paragraph::new(app.description_input.clone()).block(description_block);
-                frame.render_widget(description_text, edit_chunks[1]);
-
-                let mut calendar_event_store = CalendarEventStore::today(Style::new().red().bold());
-                if let Some(active_task) = &app.current_task {
-                    calendar_event_store
-                        .add(active_task.due_time.date(), Style::new().blue().bold());
-                }
-
-                let todays_date = OffsetDateTime::now_utc().date();
-                let calendar = Monthly::new(todays_date, calendar_event_store)
-                    .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
-                    .show_month_header(Style::new().bold())
-                    .show_weekdays_header(Style::new().italic());
-                frame.render_widget(calendar, edit_chunks[2]);
-            }
+            render_edit_panel(frame, app, edit_screen_chunk);
         }
     };
 
@@ -97,6 +43,57 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
         _ => {}
     }
+}
+
+fn render_edit_panel(frame: &mut Frame, app: &App, edit_screen_chunk: Rect) {
+    let title_text = match &app.task_creation_mode {
+        TaskCreationMode::Active => "edit current task",
+        TaskCreationMode::CreateNew => "enter a new task",
+    };
+    let edit_block = Block::default()
+        .title(title_text)
+        .borders(Borders::NONE)
+        .style(Style::default().bg(Color::DarkGray));
+
+    frame.render_widget(edit_block, edit_screen_chunk);
+
+    let edit_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(1)
+        .constraints([
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+        ])
+        .split(edit_screen_chunk);
+    let mut title_block = Block::default().title("Title").borders(Borders::ALL);
+    let mut description_block = Block::default().title("Description").borders(Borders::ALL);
+
+    let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
+
+    match app.edit_mode {
+        EditMode::Title => title_block = title_block.style(active_style),
+        EditMode::Description => description_block = description_block.style(active_style),
+        EditMode::Main => {}
+    };
+
+    let task_text = Paragraph::new(app.title_input.clone()).block(title_block);
+    frame.render_widget(task_text, edit_chunks[0]);
+
+    let description_text = Paragraph::new(app.description_input.clone()).block(description_block);
+    frame.render_widget(description_text, edit_chunks[1]);
+
+    let mut calendar_event_store = CalendarEventStore::today(Style::new().red().bold());
+    if let Some(active_task) = &app.current_task {
+        calendar_event_store.add(active_task.due_time.date(), Style::new().blue().bold());
+    }
+
+    let todays_date = OffsetDateTime::now_utc().date();
+    let calendar = Monthly::new(todays_date, calendar_event_store)
+        .block(Block::new().padding(Padding::new(0, 0, 2, 0)))
+        .show_month_header(Style::new().bold())
+        .show_weekdays_header(Style::new().italic());
+    frame.render_widget(calendar, edit_chunks[2]);
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

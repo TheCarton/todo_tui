@@ -35,7 +35,7 @@ pub struct App {
     pub description_input: String,
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub current_task: Option<Task>,
-    pub edit_mode: Option<EditMode>,
+    pub edit_mode: EditMode,
     pub popup: Option<Popup>,
     pub task_creation_mode: TaskCreationMode,
     pub tasks: Vec<Task>,
@@ -49,7 +49,7 @@ impl App {
             description_input: String::new(),
             current_screen: CurrentScreen::Main,
             current_task: None,
-            edit_mode: None,
+            edit_mode: EditMode::Main,
             popup: None,
             task_creation_mode: TaskCreationMode::CreateNew,
             tasks: Vec::new(),
