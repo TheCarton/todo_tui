@@ -97,6 +97,11 @@ impl App {
             active_task.task_status = new_status;
         }
     }
+    /*
+    This system chooses what task is shown. The basic idea of this app is that it isn't just a list, because I don't like lists
+    and lists can be done about just as well with a pencil and paper. So instead, the app will choose a single task to show you.
+    Obviously, how this task is shown to you is very important.
+    */
 
     pub fn choose_shown_task(&mut self) {
         if let Some(task) = &self.current_task {

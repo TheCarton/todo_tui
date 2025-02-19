@@ -10,6 +10,26 @@ use std::{
     io::{self, stdout, Read, Write},
 };
 
+/*
+Here's the workflow I want:
+Mode 1:
+I realize I want to add a task to my giant pile of tasks. I open ToDoTui, select a project or don't, type up a task, hit
+'add' and close the app and forget about it.
+Mode 2: I'm wondering what I should be working on, trying to select a task from my giant pile of tasks. I open up ToDoTui
+and see a task. Most likely, I decide I don't want to work on that. I select a project I want to work on, or I don't, and
+I hit the 'show a new task' button a bunch of times until I see a task that I want to work on. Then I close ToDoTui. The
+next time I open it, that same task will still be displayed.
+Mode 3: Cleanup mode. This is for going through tasks that I have skipped many times or have in some other way been marked
+as tasks I'm very likely to abandon and abandoning them. It's also for the opposite: Reviving abandoned tasks with new
+due dates.
+*/
+// TODO: Add projects which are collections of tasks.
+// Add a project screen that shows which project you have selected.
+// The project screen should also show what tasks have been marked done.
+// TODO: Make a task choosing algorithm.
+// TODO: Add a due date picker.
+// TODO: Add a cleanup mode for abadoning tasks that are often skipped etc.
+
 use app::{CurrentScreen, EditMode, Popup};
 use crossterm::event::KeyCode;
 use input_keys::{keycode_to_actionkind, ActionKind, DELETE_CHAR_KEYCODE};
