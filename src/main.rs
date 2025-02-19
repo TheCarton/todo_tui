@@ -29,6 +29,9 @@ due dates.
 // TODO: Make a task choosing algorithm.
 // TODO: Add a due date picker.
 // TODO: Add a cleanup mode for abadoning tasks that are often skipped etc.
+// TODO: The 'editing task' control flow is weird. You can edit a task, then add the edited task
+// which will now exist alongside the original task as a new task. Also, the title bar
+// says 'add new task' even when you selected edit an existing task.
 
 use app::{CurrentScreen, EditMode, Popup};
 use crossterm::event::KeyCode;
