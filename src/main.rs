@@ -1,6 +1,7 @@
 mod app;
 mod input_keys;
 mod keys_hint;
+mod project;
 mod task;
 mod ui;
 use crate::app::App;
@@ -23,7 +24,7 @@ Mode 3: Cleanup mode. This is for going through tasks that I have skipped many t
 as tasks I'm very likely to abandon and abandoning them. It's also for the opposite: Reviving abandoned tasks with new
 due dates.
 */
-// TODO: Add projects which are collections of tasks.
+// TODO: next! Add projects which are collections of tasks.
 // Add a project screen that shows which project you have selected.
 // The project screen should also show what tasks have been marked done.
 // TODO: Make a task choosing algorithm.
@@ -32,6 +33,7 @@ due dates.
 // TODO: The 'editing task' control flow is weird. You can edit a task, then add the edited task
 // which will now exist alongside the original task as a new task. Also, the title bar
 // says 'add new task' even when you selected edit an existing task.
+// TODO: track how many times a task gets skipped.
 
 use app::{CurrentScreen, EditMode, Popup};
 use crossterm::event::KeyCode;
@@ -115,10 +117,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         return Ok(());
                     }
                     Some(ActionKind::MarkTaskDone(_)) => {
-                        app.change_task_status(TaskStatus::Finished);
+                        app.mark_task_done();
                     }
                     Some(ActionKind::MarkTaskInProgress(_)) => {
-                        app.change_task_status(TaskStatus::InProgress);
+                        app.undo_mark_task_done();
                     }
                     Some(ActionKind::ShuffleTasks(_)) => {
                         app.choose_shown_task();
@@ -178,7 +180,7 @@ fn main_edit_mode_action_mapping(action: ActionKind, app: &mut App) {
             }
         },
         ActionKind::AddTask(_) => {
-            app.save_task();
+            app.add_task();
             app.current_screen = CurrentScreen::Main;
         }
         ActionKind::FocusTitle(_) => {
