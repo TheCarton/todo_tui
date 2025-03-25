@@ -47,7 +47,6 @@ use ratatui::{
     },
     Terminal,
 };
-use task::TaskStatus;
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
@@ -105,13 +104,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     Some(ActionKind::EditMode(_)) => {
                         app.current_screen = CurrentScreen::Editing;
                         app.edit_mode = EditMode::Main;
-                        if let Some(task) = &app.current_task {
-                            app.edit_mode = EditMode::Main;
-                            app.title_input = task.title.clone();
-                            if let Some(description) = &task.description {
-                                app.description_input = description.clone();
-                            }
-                        }
+                        app.edit_mode = EditMode::Main;
+                        app.title_input = app.displayed_task.title.clone();
+                        app.description_input = app
+                            .displayed_task
+                            .description
+                            .clone()
+                            .unwrap_or("".to_string())
                     }
                     Some(ActionKind::Quit(_)) => {
                         return Ok(());

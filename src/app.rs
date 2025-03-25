@@ -1,11 +1,7 @@
-use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
-use crate::{
-    project::Project,
-    task::{Task, TaskStatus},
-};
+use crate::{project::Project, task::Task};
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CurrentScreen {
@@ -38,6 +34,7 @@ pub struct App {
     pub description_input: String,
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub current_project: Project,
+    pub displayed_task: Task,
     pub edit_mode: EditMode,
     pub popup: Option<Popup>,
     pub task_creation_mode: TaskCreationMode,
@@ -51,6 +48,7 @@ impl App {
             description_input: String::new(),
             current_screen: CurrentScreen::Main,
             current_project: Project::default(),
+            displayed_task: Task::default("No tasks left!".to_string()),
             edit_mode: EditMode::Main,
             popup: None,
             task_creation_mode: TaskCreationMode::CreateNew,
@@ -62,9 +60,9 @@ impl App {
         if self.title_input.is_empty() {
             return;
         }
-        let task = match self.task_creation_mode {
+        let task_to_add = match self.task_creation_mode {
             TaskCreationMode::Active => {
-                let edited_task = self
+                let mut edited_task = self
                     .current_project
                     .get_current_task()
                     .expect("editing an active task that exists");
@@ -76,7 +74,7 @@ impl App {
                 };
                 edited_task.description = description;
                 edited_task.time_edited = OffsetDateTime::now_local().unwrap();
-                edited_task.to_owned()
+                edited_task
             }
             TaskCreationMode::CreateNew => {
                 if self.description_input.is_empty() {
@@ -86,11 +84,12 @@ impl App {
                 }
             }
         };
-        self.current_project.add_task(task.clone());
+        self.current_project.add_task(task_to_add);
     }
 
     pub(crate) fn mark_task_done(&mut self) {
-        self.current_project.mark_task_done();
+        self.current_project
+            .mark_task_done(self.displayed_task.clone());
         self.choose_shown_task();
     }
 
@@ -100,7 +99,7 @@ impl App {
     }
 
     pub(crate) fn change_active_task_due_date(&mut self, num_days: i64) {
-        if let Some(ref mut active_task) = &mut self.current_task {
+        if let Some(ref mut active_task) = &mut self.current_project.get_current_task() {
             active_task.change_due_date(num_days);
         }
     }
@@ -112,11 +111,11 @@ impl App {
     */
 
     pub fn choose_shown_task(&mut self) {
-        // I want to change the shown task to be a pointer instead of cloning
-        if let Some(task) = &self.current_task {
-            self.tasks.push(task.clone());
+        // this has issues. right now we're only displayed the else branch part.
+        if let Some(task) = self.current_project.get_current_task() {
+            self.displayed_task = task;
+        } else {
+            self.displayed_task = Task::default("No tasks! UGH".to_owned());
         }
-        self.tasks.shuffle(&mut rand::thread_rng());
-        self.current_task = self.tasks.pop();
     }
 }

@@ -19,9 +19,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .split(frame.area());
     let main_screen_chunk = app_chunks[0];
     let edit_screen_chunk = app_chunks[1];
-    if let Some(active_task) = &app.current_task {
-        frame.render_widget(active_task.clone(), main_screen_chunk);
-    }
+    frame.render_widget(app.displayed_task.clone(), main_screen_chunk);
     match app.current_screen {
         crate::app::CurrentScreen::Main => {}
         crate::app::CurrentScreen::Editing => {
@@ -84,9 +82,10 @@ fn render_edit_panel(frame: &mut Frame, app: &App, edit_screen_chunk: Rect) {
     frame.render_widget(description_text, edit_chunks[1]);
 
     let mut calendar_event_store = CalendarEventStore::today(Style::new().red().bold());
-    if let Some(active_task) = &app.current_task {
-        calendar_event_store.add(active_task.due_time.date(), Style::new().blue().bold());
-    }
+    calendar_event_store.add(
+        app.displayed_task.due_time.date(),
+        Style::new().blue().bold(),
+    );
 
     let todays_date = OffsetDateTime::now_utc().date();
     let calendar = Monthly::new(todays_date, calendar_event_store)

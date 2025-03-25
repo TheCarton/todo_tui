@@ -48,28 +48,25 @@ impl Project {
         self.tasks.push(task);
     }
 
-    pub(crate) fn get_current_task(&mut self) -> Option<&mut Task> {
+    pub(crate) fn get_current_task(&mut self) -> Option<Task> {
         /* right now this is a pretty pointless wrapper function,
         but I want to be able to choose what tasks are displayed
         based on several factors (due date, times skipped maybe)
         so later this may be more complicated.
         */
-        self.tasks.first_mut()
+        self.tasks.pop()
     }
 
-    pub(crate) fn mark_task_done(&mut self) {
-        if let Some(t) = self.get_current_task() {
-            t.task_status = TaskStatus::Finished;
-            self.done_tasks
-                .push(self.tasks.pop().expect("current tasks nonempty"));
-        }
+    pub(crate) fn mark_task_done(&mut self, mut task: Task) {
+        task.task_status = TaskStatus::Finished;
+        self.done_tasks.push(task);
     }
 
-    pub(crate) fn undo_mark_task_done(&mut self) {
-        if let Some(t) = self.done_tasks.last_mut() {
-            t.task_status = TaskStatus::InProgress;
-            self.tasks
-                .push(self.done_tasks.pop().expect("done tasks nonempty"));
+    pub(crate) fn undo_mark_task_done(&mut self) -> Option<Task> {
+        if let Some(mut task) = self.done_tasks.pop() {
+            task.task_status = TaskStatus::InProgress;
+            return Some(task);
         }
+        None
     }
 }
